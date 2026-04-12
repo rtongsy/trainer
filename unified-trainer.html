@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLA Practice Simulator — Powered by the 4F Solution</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap');
+:root{
+  /* ── LLA × 4F Solution Brand Palette ── */
+  /* LLA: near-black, charcoal, gold-amber | 4F: dark charcoal, orange */
+  --bg:#f5f2ed;          /* warm off-white — light background */
+  --s1:#ffffff;          /* white surface */
+  --s2:#f0ece6;          /* subtle warm grey */
+  --s3:#e8e2d8;          /* hover surface */
+  --s4:#ddd6c8;          /* active surface */
+  --border:rgba(0,0,0,0.08);
+  --border2:rgba(0,0,0,0.12);
+  --border3:rgba(0,0,0,0.20);
+
+  /* Primary accent — 4F orange blended with LLA gold */
+  --gold:#e8940a;        /* 4F orange-gold — primary CTA, active states */
+  --gold2:#f5a82a;       /* lighter hover */
+  --gold-dim:rgba(232,148,10,0.10);
+  --gold-b:rgba(232,148,10,0.30);
+
+  /* LLA gold-amber — secondary accent, highlights */
+  --amber:#c8900a;
+  --amber-dim:rgba(200,144,10,0.10);
+
+  /* Success green — kept for positive feedback */
+  --green:#28c97a;
+  --green-dim:rgba(40,201,122,0.09);
+  --green-b:rgba(40,201,122,0.22);
+
+  --red:#e84848;--red-dim:rgba(232,72,72,0.09);
+
+  /* Blue — possibility market differentiation */
+  --blue:#4888f0;--blue-dim:rgba(72,136,240,0.09);--blue-b:rgba(72,136,240,0.25);
+
+  /* Purple — Rapidfunnel path */
+  --purple:#9060e8;--purple-dim:rgba(144,96,232,0.09);--purple-b:rgba(144,96,232,0.25);
+
+  /* Text — dark on light */
+  --text:#1e1a14;        /* deep charcoal — LLA dark */
+  --text2:#6a6258;       /* muted warm brown-grey */
+  --text3:#a89e90;       /* subtle hint */
+  --phone-bg:#1a1a1c;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── JOURNEY BAR ── */
+.jbar{height:46px;background:var(--s1);border-bottom:1px solid rgba(232,148,10,0.25);border-top:none;box-shadow:0 1px 8px rgba(0,0,0,0.06);display:flex;align-items:center;padding:0 16px;gap:0;flex-shrink:0;z-index:50;}
+.jsteps{display:flex;align-items:center;gap:0;flex:1;overflow-x:auto;}
+.jstep{padding:5px 9px;border-radius:6px;font-size:0.68rem;font-weight:600;color:var(--text2);white-space:nowrap;transition:all 0.2s;flex-shrink:0;}
+.jstep.done{color:#1a7a45;}.jstep.active{color:var(--gold);background:var(--gold-dim);}
+.jsep{color:var(--text3);font-size:0.75rem;flex-shrink:0;padding:0 1px;opacity:0.4;}
+.jright{margin-left:auto;font-size:0.68rem;color:var(--text2);padding-left:10px;white-space:nowrap;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.screen.on{display:flex;}
+
+/* ── SETUP ── */
+#setup{overflow-y:auto;align-items:center;padding:24px 16px 48px;}
+.sw{width:100%;max-width:700px;display:flex;flex-direction:column;gap:10px;}
+
+/* STEP CARDS */
+.step-card{background:var(--s1);border:1px solid rgba(0,0,0,0.10);border-radius:14px;overflow:hidden;transition:border-color 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
+.step-card.locked{opacity:0.38;pointer-events:none;}
+.step-hdr{padding:14px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,0,0,0.07);}
+.step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:800;background:rgba(0,0,0,0.06);color:var(--text2);flex-shrink:0;transition:all 0.2s;}
+.step-card.done .step-num{background:var(--green-dim);color:var(--green);}
+.step-card.active .step-num{background:var(--gold-dim);color:var(--gold);}
+.step-title{font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;color:var(--text);}
+.step-chosen{margin-left:auto;font-size:0.72rem;font-weight:600;color:var(--text2);background:var(--s3);padding:3px 9px;border-radius:10px;}
+.step-body{padding:14px 18px;}
+
+/* CHOICE GRIDS */
+.choice-grid{display:grid;gap:8px;}
+.choice-grid.cols2{grid-template-columns:1fr 1fr;}
+.choice-grid.cols3{grid-template-columns:1fr 1fr 1fr;}
+.choice-btn{padding:12px 14px;border-radius:10px;border:1px solid rgba(0,0,0,0.09);background:var(--s2);cursor:pointer;transition:all 0.15s;text-align:left;display:flex;flex-direction:column;gap:4px;}
+.choice-btn:hover{background:var(--s3);border-color:rgba(232,148,10,0.3);}
+.choice-btn.sel{border-color:var(--gold);background:var(--gold-dim);}
+.choice-btn.sel-green{border-color:rgba(232,148,10,0.35);background:var(--gold-dim);}
+.choice-btn.sel-blue{border-color:rgba(72,136,240,0.35);background:var(--blue-dim);}
+.choice-btn.sel-purple{border-color:rgba(144,96,232,0.35);background:var(--purple-dim);}
+.cb-icon{font-size:1.2rem;margin-bottom:2px;}
+.cb-title{font-size:0.82rem;font-weight:600;color:var(--text);}
+.choice-btn.sel .cb-title,.choice-btn.sel-green .cb-title,.choice-btn.sel-blue .cb-title,.choice-btn.sel-purple .cb-title{color:var(--gold);}
+.choice-btn.sel-green .cb-title{color:var(--gold);}
+.choice-btn.sel-blue .cb-title{color:var(--blue);}
+.choice-btn.sel-purple .cb-title{color:var(--purple);}
+.cb-desc{font-size:0.7rem;color:var(--text2);line-height:1.45;}
+.cb-badge{display:inline-block;font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:3px;width:fit-content;}
+.badge-green{background:var(--green-dim);color:var(--green);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);}
+.badge-amber{background:var(--amber-dim);color:var(--amber);}
+.badge-purple{background:var(--purple-dim);color:var(--purple);}
+
+/* DETAILS ROW (tier, persona, mood) */
+.detail-row{display:grid;gap:8px;margin-top:8px;}
+.detail-row.cols4{grid-template-columns:repeat(4,1fr);}
+.detail-row.cols8{grid-template-columns:repeat(4,1fr);}
+.detail-row.cols3{grid-template-columns:repeat(3,1fr);}
+.detail-btn{padding:8px 7px;border-radius:8px;border:1px solid rgba(0,0,0,0.09);background:var(--s2);cursor:pointer;transition:all 0.13s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.detail-btn:hover{background:var(--s3);}
+.detail-btn.sel{border-color:var(--gold);background:var(--gold-dim);}
+.db-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:0.9rem;color:white;}
+.db-name{font-size:0.72rem;font-weight:600;color:var(--text);}
+.db-sub{font-size:0.6rem;color:var(--text2);}
+.detail-btn.sel .db-name{color:var(--gold);}
+.mood-btn{padding:10px 8px;border-radius:8px;border:1px solid rgba(0,0,0,0.09);background:var(--s2);cursor:pointer;transition:all 0.13s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.mood-btn:hover{background:var(--s3);}
+.mood-btn.sel-warm{border-color:rgba(40,201,122,0.35);background:var(--green-dim);}
+.mood-btn.sel-neutral{border-color:rgba(200,168,74,0.35);background:var(--gold-dim);}
+.mood-btn.sel-cold{border-color:rgba(232,72,72,0.35);background:var(--red-dim);}
+.mb-icon{font-size:1rem;}.mb-label{font-size:0.76rem;font-weight:600;color:var(--text);}.mb-sub{font-size:0.62rem;color:var(--text3);}
+
+/* NAME FIELDS */
+.name-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.nf-label{font-size:0.68rem;font-weight:600;color:var(--text2);margin-bottom:4px;}
+.nf-input{width:100%;padding:9px 12px;background:var(--s2);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:0.84rem;transition:border-color 0.15s;}
+.nf-input:focus{outline:none;border-color:var(--gold);}
+.nf-input::placeholder{color:var(--text3);}
+
+/* RF TOGGLE */
+.rf-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rf-yes{border-color:rgba(144,96,232,0.35)!important;background:var(--purple-dim)!important;}
+.rf-yes .cb-title{color:var(--purple)!important;}
+
+/* START BTN */
+.start-wrap{padding:0 0 4px;}
+.start-btn{width:100%;padding:15px;background:var(--gold);color:#000;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:800;cursor:pointer;letter-spacing:0.04em;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.start-btn:hover{background:var(--gold2);transform:translateY(-1px);}
+.start-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none;}
+.start-btn.purple{background:var(--purple);color:#fff;}
+.start-btn.purple:hover{background:#7048d0;}
+.start-btn.blue{background:var(--blue);}
+.start-btn.blue:hover{background:#2a6ae0;}
+
+/* ── SESSION ── */
+#session{flex-direction:row;}
+.left{width:224px;min-width:224px;background:var(--s2);border-right:1px solid rgba(0,0,0,0.1);padding:14px 12px;display:flex;flex-direction:column;gap:11px;overflow-y:auto;flex-shrink:0;}
+.lbl{font-size:0.58rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);}
+
+.ctx-card{background:var(--s1);border:1px solid rgba(0,0,0,0.09);border-radius:9px;padding:11px;}
+.ctx-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:0.9rem;color:white;margin-bottom:6px;}
+.ctx-name{font-size:0.86rem;font-weight:600;color:var(--gold);margin-bottom:2px;}
+.ctx-sub{font-size:0.7rem;color:var(--text2);}
+.ctx-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.ctx-tag{font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:10px;}
+
+.goal-card{border-radius:9px;padding:11px;}
+.goal-card.natural{background:rgba(232,148,10,0.07);border:1px solid rgba(232,148,10,0.22);}
+.goal-card.possibility{background:var(--blue-dim);border:1px solid rgba(72,136,240,0.2);}
+.goal-card.rf{background:var(--purple-dim);border:1px solid rgba(144,96,232,0.2);}
+.goal-lbl{font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px;}
+.goal-card.natural .goal-lbl{color:var(--gold);}
+.goal-card.possibility .goal-lbl{color:var(--blue);}
+.goal-card.rf .goal-lbl{color:var(--purple);}
+.goal-body{font-size:0.72rem;color:var(--text2);line-height:1.55;}
+
+.rf-ctx{background:var(--purple-dim);border:1px solid rgba(144,96,232,0.2);border-radius:9px;padding:11px;}
+.rf-ctx-lbl{font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--purple);margin-bottom:5px;}
+.rf-ctx-body{font-size:0.7rem;color:var(--text2);line-height:1.55;}
+
+.score-box{background:var(--s1);border:1px solid rgba(0,0,0,0.09);border-radius:9px;padding:11px;text-align:center;}
+.score-big{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;color:var(--gold);line-height:1;transition:color 0.5s;}
+.score-sub{font-size:0.62rem;color:var(--text3);margin-top:2px;}
+.skill-row{margin-bottom:8px;}
+.sk-top{display:flex;justify-content:space-between;font-size:0.68rem;margin-bottom:3px;}
+.sk-nm{color:var(--text2);}.sk-vl{font-weight:700;color:var(--text);}
+.sk-track{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;}
+.sk-fill{height:100%;border-radius:2px;transition:width 0.7s ease,background 0.5s;}
+
+.fb-log{display:flex;flex-direction:column;gap:6px;}
+.fb-item{background:var(--s1);border:1px solid rgba(0,0,0,0.08);border-radius:7px;padding:8px 10px;font-size:0.7rem;color:var(--text2);line-height:1.5;}
+.fb-turn{font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);margin-bottom:2px;}
+.tag-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
+.tag{font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:9px;}
+.tag.g{background:var(--green-dim);color:var(--green);}
+.tag.w{background:var(--amber-dim);color:var(--amber);}
+.tag.b{background:var(--red-dim);color:var(--red);}
+
+.end-btn{padding:9px 14px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.75rem;cursor:pointer;transition:all 0.14s;margin-top:4px;}
+.end-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── PHONE VOICE ── */
+.voice-area{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden;}
+.voice-ui{width:100%;max-width:540px;background:#ffffff;border:1px solid rgba(0,0,0,0.12);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 2px 16px rgba(0,0,0,0.08);}
+.vc-hdr{padding:16px 18px;background:#f5f2ed;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;gap:12px;}
+.vc-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:1.1rem;color:white;position:relative;flex-shrink:0;}
+.vc-ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--green);opacity:0;animation:vcRing 1.6s infinite;}
+@keyframes vcRing{0%{opacity:0.7;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
+.vc-name{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--text);}
+.vc-sub{font-size:0.7rem;color:var(--text2);margin-top:2px;}
+.vc-timer{margin-left:auto;font-family:'Syne',sans-serif;font-size:0.84rem;color:var(--green);}
+.vc-trans{flex:1;min-height:180px;max-height:300px;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:7px;background:#fafaf8;}
+.tl{font-size:0.8rem;padding:8px 12px;border-radius:9px;line-height:1.5;}
+.tl.agent{background:var(--blue-dim);border:1px solid rgba(72,136,240,0.15);color:var(--text);}
+.tl.prospect{background:#f0ece6;border:1px solid rgba(0,0,0,0.08);color:var(--text);}
+.tl.sys{background:transparent;color:var(--text3);font-size:0.7rem;font-style:italic;border:none;padding:2px 0;opacity:0.6;}
+.tl-spk{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;}
+.tl-spk.a{color:var(--blue);}.tl-spk.p{color:var(--gold);}
+.vc-proc{display:none;align-items:center;gap:8px;padding:9px 16px;background:#f0ece6;border-top:1px solid rgba(0,0,0,0.07);}
+.vc-proc.on{display:flex;}
+.proc-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pdot 1s infinite alternate;}
+@keyframes pdot{from{opacity:0.3}to{opacity:1}}
+.proc-txt{font-size:0.74rem;color:var(--text2);}
+.vc-live{padding:10px 16px;border-top:1px solid rgba(0,0,0,0.07);background:#f5f2ed;}
+.vc-live-txt{font-size:0.77rem;color:var(--text3);min-height:20px;font-style:italic;transition:color 0.2s;}
+.vc-live-txt.listening{color:var(--text2);}
+.vc-ctrls{padding:12px 16px 16px;display:flex;align-items:center;justify-content:space-between;background:#ffffff;}
+.ctrl{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:none;cursor:pointer;transition:all 0.14s;}
+.ctrl.mic{background:var(--green);color:#000;width:56px;height:56px;}
+.ctrl.mic:hover{background:#32e886;}
+.ctrl.mic.rec{background:var(--red);color:#fff;animation:recP 0.8s infinite;}
+@keyframes recP{0%,100%{box-shadow:0 0 0 0 rgba(232,72,72,0.4)}50%{box-shadow:0 0 0 8px rgba(232,72,72,0)}}
+.ctrl.mute{background:var(--s3);color:var(--text2);}
+.ctrl.mute:hover{background:var(--s2);}
+.ctrl.mute.muted{background:var(--red-dim);color:var(--red);}
+.ctrl.end{background:var(--red);color:#fff;}
+.ctrl.end:hover{background:#c03030;}
+.vc-fallback{display:none;padding:10px 16px;border-top:1px solid var(--border);gap:8px;}
+.vc-fallback.on{display:flex;}
+.fb-ta{flex:1;padding:8px 11px;background:var(--s2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:0.8rem;resize:none;}
+.fb-send{padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;}
+
+/* ── SMS AREA ── */
+.sms-area{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden;}
+.phone-wrap{position:relative;}
+.phone{width:340px;height:650px;background:var(--phone-bg);border-radius:44px;border:1px solid rgba(255,255,255,0.14);box-shadow:0 0 0 6px #1a1a1c,0 0 0 7px rgba(255,255,255,0.05),0 20px 50px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100px;height:26px;background:var(--phone-bg);border-radius:0 0 14px 14px;z-index:10;display:flex;align-items:center;justify-content:center;gap:7px;}
+.notch-cam{width:7px;height:7px;border-radius:50%;background:#111;}
+.notch-spk{width:44px;height:4px;border-radius:2px;background:#111;}
+.ph-st{padding:9px 18px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ph-time{font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;color:white;}
+.ph-icons{font-size:0.64rem;color:white;}
+.ph-hdr{padding:6px 11px 8px;display:flex;align-items:center;gap:8px;border-bottom:0.5px solid rgba(255,255,255,0.05);flex-shrink:0;}
+.ph-hdr-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:0.82rem;color:white;}
+.ph-hdr-name{font-size:0.8rem;font-weight:600;color:white;}
+.ph-hdr-sub{font-size:0.58rem;color:rgba(255,255,255,0.34);margin-top:1px;}
+.ph-banner{padding:4px 11px;font-size:0.63rem;color:rgba(255,255,255,0.36);text-align:center;font-style:italic;flex-shrink:0;border-bottom:0.5px solid rgba(255,255,255,0.05);}
+.ph-thread{flex:1;overflow-y:auto;padding:8px 9px;display:flex;flex-direction:column;gap:4px;}
+.date-sep{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.25);padding:4px 0;}
+.mw{display:flex;flex-direction:column;animation:mp 0.18s ease;}
+@keyframes mp{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.mw.sent{align-items:flex-end;}.mw.recv{align-items:flex-start;}
+.bbl{max-width:80%;padding:7px 11px;border-radius:16px;font-size:0.8rem;line-height:1.45;word-wrap:break-word;}
+.bbl.sent{background:#0a84ff;color:white;border-radius:16px 16px 3px 16px;}
+.bbl.recv{background:#3a3a3c;color:white;border-radius:16px 16px 16px 3px;}
+.bbl.sys{background:transparent;color:rgba(255,255,255,0.25);font-size:0.63rem;text-align:center;max-width:100%;padding:2px 0;font-style:italic;}
+.rcpt{font-size:0.57rem;color:rgba(255,255,255,0.25);text-align:right;padding:1px 3px;}
+.rcpt.read{color:#4888f0;}
+.typing-bub{background:#3a3a3c;border-radius:16px 16px 16px 3px;padding:8px 12px;display:flex;gap:4px;align-items:center;}
+.td{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.45);animation:tdA 1.2s infinite;}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes tdA{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+.ph-input-bar{padding:7px 8px 11px;display:flex;align-items:flex-end;gap:5px;background:var(--phone-bg);border-top:0.5px solid rgba(255,255,255,0.05);flex-shrink:0;}
+.ph-input-wrap{flex:1;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.1);border-radius:18px;padding:6px 10px;display:flex;align-items:flex-end;gap:5px;}
+.ph-ta{flex:1;background:transparent;border:none;color:white;font-family:'Instrument Sans',sans-serif;font-size:0.78rem;line-height:1.4;resize:none;min-height:19px;max-height:68px;outline:none;}
+.ph-ta::placeholder{color:rgba(255,255,255,0.24);}
+.ph-ta:disabled{opacity:0.3;cursor:not-allowed;}
+.ch-ct{font-size:0.57rem;font-weight:700;color:rgba(255,255,255,0.24);min-width:24px;text-align:right;transition:color 0.18s;}
+.ch-ct.warn{color:#ff9f0a;}.ch-ct.over{color:var(--red);}
+.ph-send{width:28px;height:28px;border-radius:50%;background:var(--blue);border:none;color:#fff;font-size:0.82rem;cursor:pointer;transition:all 0.13s;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ph-send:hover{background:#2a6ae0;transform:scale(1.05);}
+.ph-send:disabled{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.2);cursor:not-allowed;transform:none;}
+.ph-home{padding:5px 0 9px;display:flex;justify-content:center;flex-shrink:0;background:var(--phone-bg);}
+.ph-home-bar{width:100px;height:3px;background:rgba(255,255,255,0.24);border-radius:2px;}
+
+/* ── EMAIL AREA ── */
+.email-area{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden;}
+.email-client{width:100%;max-width:600px;background:#ffffff;border:1px solid rgba(0,0,0,0.12);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 2px 16px rgba(0,0,0,0.08);}
+.email-toolbar{padding:9px 14px;background:#f5f2ed;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;gap:8px;}
+.etb-dot{width:9px;height:9px;border-radius:50%;}
+.email-subject-bar{padding:0;border-bottom:1px solid var(--border);}
+.email-field{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:0.5px solid var(--border);}
+.ef-label{font-size:0.68rem;font-weight:600;color:var(--text3);width:48px;flex-shrink:0;}
+.ef-val{font-size:0.82rem;color:var(--text);}
+.subject-score{padding:6px 16px;background:var(--green-dim);border-bottom:1px solid rgba(40,201,122,0.2);font-size:0.7rem;color:var(--green);display:none;}
+.subject-score.on{display:block;}
+.email-body-area{flex:1;min-height:200px;max-height:320px;overflow-y:auto;padding:14px 16px;}
+.email-body-txt{font-size:0.82rem;color:var(--text2);line-height:1.7;white-space:pre-wrap;}
+.email-input-ta{width:100%;min-height:200px;padding:14px 16px;background:#ffffff;border:none;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:0.82rem;line-height:1.65;resize:none;outline:none;}
+.email-input-ta::placeholder{color:var(--text3);}
+.email-actions{padding:11px 16px;background:#f5f2ed;border-top:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;gap:10px;}
+.email-send-btn{padding:7px 18px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.14s;}
+.email-send-btn:hover{background:#2a6ae0;}
+.email-send-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.email-word-count{font-size:0.7rem;color:var(--text3);}
+
+/* ── SUMMARY ── */
+#summary{align-items:center;justify-content:center;background:var(--bg);gap:14px;padding:30px;overflow-y:auto;}
+
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── TOPBAR ── */
+.topbar{height:52px;background:#1a2440;border-bottom:2px solid var(--gold);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;}
+.topbar-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:#fff;letter-spacing:-0.01em;}
+.topbar-logo em{color:var(--gold);font-style:normal;}
+.topbar-pill{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:rgba(232,148,10,0.18);color:var(--gold);border:1px solid rgba(232,148,10,0.3);}
+.topbar-right{margin-left:auto;font-size:0.68rem;color:rgba(255,255,255,0.45);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Prospect<em>AI</em></div>
+  <div class="topbar-pill">Opening Doors, Making the Connection</div>
+  <div class="topbar-right">Powered by the 4F Solution</div>
+</div>
+
+<div class="jbar">
+  <div class="jsteps" id="jsteps">
+    <div class="jstep active" id="js-setup">⚙ Setup</div>
+    <div class="jsep">›</div>
+    <div class="jstep pending" id="js-session">⚡ Session</div>
+    <div class="jsep">›</div>
+    <div class="jstep pending" id="js-summary">✓ Summary</div>
+  </div>
+  <div class="jright" id="jright"></div>
+</div>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div class="screen on" id="setup">
+<div class="sw">
+
+  <!-- STEP 1: AGENT PROFILE -->
+  <div class="step-card active" id="sc-agent">
+    <div class="step-hdr">
+      <div class="step-num" id="sn-agent">1</div>
+      <div class="step-title">Your Profile</div>
+    </div>
+    <div class="step-body">
+
+      <!-- Name + Company -->
+      <div class="name-row" style="margin-bottom:14px">
+        <div><div class="nf-label">Your First Name</div><input class="nf-input" id="inp-name" type="text" placeholder="e.g. Ryan" maxlength="30"></div>
+        <div><div class="nf-label">Your Company</div><input class="nf-input" id="inp-company" type="text" placeholder="e.g. Experior Financial" maxlength="40"></div>
+      </div>
+
+      <!-- Country -->
+      <div class="nf-label" style="margin-bottom:6px">Country</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button onclick="setCountry('ca')" id="ctry-ca" class="choice-btn sel" style="flex:1;flex-direction:row;gap:8px;align-items:center;padding:10px 14px;">
+          <span style="font-size:1.1rem">🇨🇦</span><div><div class="cb-title">Canada</div><div class="cb-desc">RRSP, TFSA, CPP, OAS</div></div>
+        </button>
+        <button onclick="setCountry('us')" id="ctry-us" class="choice-btn" style="flex:1;flex-direction:row;gap:8px;align-items:center;padding:10px 14px;">
+          <span style="font-size:1.1rem">🇺🇸</span><div><div class="cb-title">United States</div><div class="cb-desc">401(k), Roth IRA, Social Security</div></div>
+        </button>
+      </div>
+
+      <!-- Prospect Region + Background dropdowns -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div>
+          <div class="nf-label" style="margin-bottom:5px">Prospect region <span style="font-weight:400;color:var(--text3);font-size:0.63rem">— where your contacts are based</span></div>
+          <select id="region-select" class="nf-input" onchange="setRegion(this.value)" style="cursor:pointer">
+            <option value="">Select a region...</option>
+          </select>
+        </div>
+        <div>
+          <div class="nf-label" style="margin-bottom:5px">Prospect community <span style="font-weight:400;color:var(--text3);font-size:0.63rem">— who your natural market looks like</span></div>
+          <select id="background-select" class="nf-input" onchange="setBackground(this.value)" style="cursor:pointer">
+            <option value="">Select a background...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Persona Names -->
+      <div id="persona-names-section" style="display:none">
+        <div class="nf-label" style="margin-bottom:5px">Your contacts <span style="font-weight:400;color:var(--text3);font-size:0.63rem">— use real names or keep the defaults</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="persona-name-inputs"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STEP 2: MARKET -->
+  <div class="step-card" id="sc-market">
+    <div class="step-hdr">
+      <div class="step-num" id="sn-market">2</div>
+      <div class="step-title">Market Type</div>
+      <div class="step-chosen" id="ch-market" style="display:none"></div>
+    </div>
+    <div class="step-body">
+      <div class="choice-grid cols2">
+        <div class="choice-btn" id="mb-natural" onclick="setMarket('natural')">
+          <div class="cb-icon">❤️</div>
+          <div class="cb-title">Natural Market</div>
+          <div class="cb-desc">People you already know personally. The relationship exists — you're introducing your professional role.</div>
+          <span class="cb-badge badge-green">People you know</span>
+        </div>
+        <div class="choice-btn" id="mb-possibility" onclick="setMarket('possibility')">
+          <div class="cb-icon">🌐</div>
+          <div class="cb-title">Possibility Market</div>
+          <div class="cb-desc">People you don't know. You are seen as a professional from first contact.</div>
+          <span class="cb-badge badge-blue">Cold outreach</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: CHANNEL -->
+  <div class="step-card locked" id="sc-channel">
+    <div class="step-hdr">
+      <div class="step-num" id="sn-channel">3</div>
+      <div class="step-title">Opening Channel</div>
+      <div class="step-chosen" id="ch-channel" style="display:none"></div>
+    </div>
+    <div class="step-body">
+      <div class="choice-grid cols3">
+        <div class="choice-btn" id="cb-phone" onclick="setChannel('phone')">
+          <div class="cb-icon">📞</div>
+          <div class="cb-title">Phone Call First</div>
+          <div class="cb-desc">Live voice call. Prospect speaks back via TTS. Hold-to-speak microphone.</div>
+          <span class="cb-badge badge-green" id="phone-badge">Close family / best friend</span>
+        </div>
+        <div class="choice-btn" id="cb-sms" onclick="setChannel('sms')">
+          <div class="cb-icon">💬</div>
+          <div class="cb-title">SMS First</div>
+          <div class="cb-desc">iPhone-style thread. 160-char limit enforced. Less pressure, easier to respond.</div>
+          <span class="cb-badge badge-amber" id="sms-badge">Acquaintance / lapsed</span>
+        </div>
+        <div class="choice-btn" id="cb-email" onclick="setChannel('email')">
+          <div class="cb-icon">📧</div>
+          <div class="cb-title">Email First</div>
+          <div class="cb-desc">Full inbox UI. Subject line scoring. Prospect replies or deletes based on quality.</div>
+          <span class="cb-badge badge-blue" id="email-badge">Possibility market</span>
+        </div>
+      </div>
+      <!-- Tier (shown after channel chosen) -->
+      <div id="tier-section" style="display:none;margin-top:10px;">
+        <div class="lbl" style="margin-bottom:7px">Relationship Tier</div>
+        <div class="detail-row cols4" id="tier-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: RAPIDFUNNEL -->
+  <div class="step-card locked" id="sc-rf">
+    <div class="step-hdr">
+      <div class="step-num" id="sn-rf">4</div>
+      <div class="step-title">Using Rapidfunnel?</div>
+      <div class="step-chosen" id="ch-rf" style="display:none"></div>
+    </div>
+    <div class="step-body">
+      <div class="rf-toggle">
+        <div class="choice-btn" id="rf-no" onclick="setRF(false)">
+          <div class="cb-icon">🚫</div>
+          <div class="cb-title">No — Direct Outreach</div>
+          <div class="cb-desc">Standard phone, SMS, or email first contact. No Rapidfunnel involved.</div>
+        </div>
+        <div class="choice-btn" id="rf-yes" onclick="setRF(true)">
+          <div class="cb-icon">⚡</div>
+          <div class="cb-title">Yes — Rapidfunnel Path</div>
+          <div class="cb-desc">Rapidfunnel handles the outreach. Practice what to say at any point in that process.</div>
+          <span class="cb-badge badge-purple">Rapidfunnel</span>
+        </div>
+      </div>
+      <!-- RF Entry Point (shown when RF = yes) -->
+      <div id="rf-entry-section" style="display:none;margin-top:10px;">
+        <div class="lbl" style="margin-bottom:7px">Where are you in the Rapidfunnel process?</div>
+        <div class="choice-grid cols2" style="gap:7px;">
+          <div class="choice-btn" id="rfe-permission" onclick="setRFEntry('permission')">
+            <div class="cb-title">Asking permission to send</div>
+            <div class="cb-desc">Practice the initial ask — "Can I send you something?" — before Rapidfunnel goes out.</div>
+          </div>
+          <div class="choice-btn" id="rfe-sent" onclick="setRFEntry('sent')">
+            <div class="cb-title">Sent it, no reply yet</div>
+            <div class="cb-desc">Rapidfunnel delivered. Following up to make sure it arrived and create curiosity.</div>
+          </div>
+          <div class="choice-btn" id="rfe-watched" onclick="setRFEntry('watched')">
+            <div class="cb-title">They watched the sizzle</div>
+            <div class="cb-desc">They opened and watched. Now follow up to book the 4F Solution overview.</div>
+          </div>
+          <div class="choice-btn" id="rfe-questions" onclick="setRFEntry('questions')">
+            <div class="cb-title">Watched and has questions</div>
+            <div class="cb-desc">They're curious and reaching out. Handle questions without giving the full presentation.</div>
+          </div>
+          <div class="choice-btn" id="rfe-postsend" onclick="setRFEntry('postsend')">
+            <div class="cb-title">After initial phone/SMS/email</div>
+            <div class="cb-desc">First contact already happened. Now sending Rapidfunnel as a follow-up resource.</div>
+          </div>
+          <div class="choice-btn" id="rfe-reengaging" onclick="setRFEntry('reengaging')">
+            <div class="cb-title">Re-engaging a cold contact</div>
+            <div class="cb-desc">Someone who went cold. Using Rapidfunnel to restart the conversation naturally.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5: PROSPECT & MOOD -->
+  <div class="step-card locked" id="sc-prospect">
+    <div class="step-hdr">
+      <div class="step-num" id="sn-prospect">5</div>
+      <div class="step-title">Prospect & Mood</div>
+    </div>
+    <div class="step-body">
+      <div class="lbl" style="margin-bottom:7px">Who are you contacting?</div>
+      <div class="detail-row cols8" id="persona-grid"></div>
+      <div class="lbl" style="margin-top:12px;margin-bottom:7px">Their mood today</div>
+      <div class="detail-row cols3">
+        <div class="mood-btn" id="mood-warm" onclick="setMood('warm')">
+          <div class="mb-icon">😌</div><div class="mb-label">Relaxed</div><div class="mb-sub">Open and patient</div>
+        </div>
+        <div class="mood-btn sel-neutral" id="mood-neutral" onclick="setMood('neutral')">
+          <div class="mb-icon">😐</div><div class="mb-label">Typical</div><div class="mb-sub">Busy but willing</div>
+        </div>
+        <div class="mood-btn" id="mood-cold" onclick="setMood('cold')">
+          <div class="mb-icon">😤</div><div class="mb-label">Stressed</div><div class="mb-sub">Raises real objections</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- START -->
+  <div class="start-wrap">
+    <button class="start-btn" id="start-btn" disabled onclick="startSession()">Choose your options above to begin</button>
+  </div>
+
+</div>
+</div>
+
+<!-- ══ SESSION SCREEN ══ -->
+<div class="screen" id="session">
+  <!-- LEFT PANEL -->
+  <div class="left" id="left-panel">
+    <div class="lbl">Context</div>
+    <div class="ctx-card">
+      <div class="ctx-av" id="ctx-av" style="background:#5b7de8">M</div>
+      <div class="ctx-name" id="ctx-name">Mike</div>
+      <div class="ctx-sub" id="ctx-sub">Best Friend · Edmonton</div>
+      <div class="ctx-tags" id="ctx-tags"></div>
+    </div>
+    <div class="goal-card natural" id="goal-card">
+      <div class="goal-lbl" id="goal-lbl">Your Goal</div>
+      <div class="goal-body" id="goal-body">Book a 45-minute complimentary 4F Solution educational overview. Nothing is for sale.</div>
+    </div>
+    <div class="rf-ctx" id="rf-ctx" style="display:none">
+      <div class="rf-ctx-lbl">Rapidfunnel Context</div>
+      <div class="rf-ctx-body" id="rf-ctx-body"></div>
+    </div>
+    <div class="lbl">Score</div>
+    <div class="score-box">
+      <div class="score-big" id="score-num">—</div>
+      <div class="score-sub" id="score-sub-lbl">Overall score</div>
+    </div>
+    <div id="skill-bars"></div>
+    <div class="lbl">Feedback</div>
+    <div class="fb-log" id="fb-log">
+      <div style="font-size:0.7rem;color:var(--text3);text-align:center;padding:5px">Feedback after each exchange</div>
+    </div>
+    <button class="end-btn" onclick="showSummary()">End Session →</button>
+  </div>
+
+  <!-- VOICE AREA -->
+  <div class="voice-area" id="voice-area" style="display:none">
+    <div class="voice-ui">
+      <div class="vc-hdr">
+        <div class="vc-av" id="vc-av" style="background:#5b7de8"><div class="vc-ring"></div>M</div>
+        <div>
+          <div class="vc-name" id="vc-name">Mike</div>
+          <div class="vc-sub" id="vc-sub">Best Friend</div>
+        </div>
+        <div class="vc-timer" id="vc-timer">0:00</div>
+      </div>
+      <div class="vc-trans" id="vc-trans"></div>
+      <div class="vc-proc" id="vc-proc"><div class="proc-dot"></div><div class="proc-txt" id="proc-txt">Connecting...</div></div>
+      <div class="vc-live"><div class="vc-live-txt" id="vc-live">Press and hold mic to speak...</div></div>
+      <div class="vc-ctrls">
+        <button class="ctrl mute" id="mute-btn" onclick="toggleMute()">🎤</button>
+        <button class="ctrl mic" id="mic-btn" onmousedown="startListen()" onmouseup="stopListen()" ontouchstart="startListen(event)" ontouchend="stopListen()">🎙️</button>
+        <button class="ctrl end" onclick="showSummary()">📵</button>
+      </div>
+      <div class="vc-fallback" id="vc-fallback">
+        <textarea class="fb-ta" id="fallback-ta" rows="2" placeholder="Type what you'd say..."></textarea>
+        <button class="fb-send" onclick="sendFallback()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMS AREA -->
+  <div class="sms-area" id="sms-area" style="display:none">
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="notch"><div class="notch-cam"></div><div class="notch-spk"></div><div class="notch-cam"></div></div>
+        <div class="ph-st"><div class="ph-time" id="sms-time">9:41</div><div class="ph-icons">●●● WiFi 🔋</div></div>
+        <div class="ph-hdr">
+          <span style="font-size:0.9rem;color:#4888f0">‹</span>
+          <div class="ph-hdr-av" id="sms-hdr-av" style="background:#5b7de8">M</div>
+          <div>
+            <div class="ph-hdr-name" id="sms-hdr-name">Mike</div>
+            <div class="ph-hdr-sub" id="sms-hdr-sub">Best Friend</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px;font-size:0.9rem;color:#4888f0"><span>📞</span><span>ℹ️</span></div>
+        </div>
+        <div class="ph-banner" id="sms-banner">Natural Market · SMS outreach</div>
+        <div class="ph-thread" id="ph-thread"></div>
+        <div class="ph-input-bar">
+          <div class="ph-input-wrap">
+            <textarea class="ph-ta" id="ph-ta" placeholder="Text Message" rows="1" disabled oninput="handleSmsInput(this)" onkeydown="handleSmsKey(event)"></textarea>
+            <div class="ch-ct" id="ch-ct">160</div>
+          </div>
+          <button class="ph-send" id="ph-send" onclick="sendSms()" disabled>↑</button>
+        </div>
+        <div class="ph-home"><div class="ph-home-bar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL AREA -->
+  <div class="email-area" id="email-area" style="display:none">
+    <div class="email-client">
+      <div class="email-toolbar">
+        <div class="etb-dot" style="background:#e84848"></div>
+        <div class="etb-dot" style="background:#e09030"></div>
+        <div class="etb-dot" style="background:#28c97a"></div>
+        <div style="font-size:0.78rem;color:var(--text2);margin-left:8px">New Message</div>
+      </div>
+      <div class="subject-score" id="subject-score"></div>
+      <div class="email-field">
+        <div class="ef-label">To</div>
+        <div class="ef-val" id="email-to">prospect@email.com</div>
+      </div>
+      <div class="email-field">
+        <div class="ef-label">Subject</div>
+        <input id="email-subject" type="text" placeholder="Write a compelling subject line..." style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:0.82rem;outline:none;" oninput="scoreSubject(this.value)">
+      </div>
+      <div id="email-thread-area" style="display:none;flex-direction:column;overflow-y:auto;max-height:280px;padding:12px 16px;gap:10px;"></div>
+      <textarea class="email-input-ta" id="email-body" placeholder="Write your email here..." oninput="updateWordCount(this.value)"></textarea>
+      <div class="email-actions">
+        <button class="email-send-btn" id="email-send-btn" onclick="sendEmail()">Send</button>
+        <div class="email-word-count" id="word-count">0 words</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SUMMARY ══ -->
+<div class="screen" id="summary"></div>
+
+<script>
+// ── API CONFIGURATION ──
+// Replace the empty string below with your Anthropic API key
+// Get your key at: https://console.anthropic.com
+const ANTHROPIC_API_KEY = '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';
+const API = 'https://api.anthropic.com/v1/messages';
+
+// ── URL PARAMS (SuiteDash) ──
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  const n=p.get('name'),e=p.get('email'),c=p.get('company');
+  if(n){const el=document.getElementById('inp-name');el.value=n;el.readOnly=true;el.style.opacity='0.6';}
+  if(c){const el=document.getElementById('inp-company');el.value=c;el.readOnly=true;el.style.opacity='0.6';}
+  window._sd={name:n||'',email:e||'',company:c||'Experior Financial'};
+})();
+
+// Init profile builder on page load
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!ANTHROPIC_API_KEY){
+    const warn=document.createElement('div');
+    warn.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#cc3333;color:#fff;text-align:center;padding:10px 16px;font-family:sans-serif;font-size:0.82rem;font-weight:600;';
+    warn.textContent='⚠ No API key set — open the HTML file and add your Anthropic API key to ANTHROPIC_API_KEY at the top of the script.';
+    document.body.prepend(warn);
+  }
+  buildRegionGrid();
+  buildBackgroundGrid();
+});
+
+// ── BACKGROUND & REGION DATA ──
+
+const BACKGROUNDS = [
+  {
+    id:"european", label:"European / White", icon:"🏔️",
+    desc:"Mixed European heritage — British, French, Ukrainian, Dutch, Scandinavian roots",
+    names:{
+      close_family:"Aunt Carol", best_friend:"Mike", moms_friend:"Linda",
+      old_coworker:"Dave", college_friend:"Jess", neighbour:"Bob",
+      community_friend:"Tanya", sports_buddy:"Kevin"
+    },
+    culturalContext:"Your natural market reflects a mix of European-heritage families typical across Canada and the US. Many contacts have some familiarity with basic financial products but limited awareness of tax efficiency strategies.",
+  },
+  {
+    id:"south_asian", label:"South Asian", icon:"🪔",
+    desc:"Indian, Pakistani, Sri Lankan, Bangladeshi, Nepali backgrounds",
+    names:{
+      close_family:"Auntie Priya", best_friend:"Raj", moms_friend:"Mrs. Sharma",
+      old_coworker:"Vikram", college_friend:"Meera", neighbour:"Suresh",
+      community_friend:"Anita", sports_buddy:"Arjun"
+    },
+    culturalContext:"Your natural market has strong South Asian community ties. Family financial decisions are often collective — parents, in-laws, and siblings are all stakeholders. There is cultural emphasis on homeownership, children's education, and supporting aging parents. Many contacts have family financial obligations across borders. Trust is built through community reputation and referrals, not cold outreach.",
+  },
+  {
+    id:"east_asian", label:"East Asian", icon:"🏮",
+    desc:"Chinese, Korean, Japanese, Taiwanese, Hong Kong backgrounds",
+    names:{
+      close_family:"Auntie Wei", best_friend:"Jason", moms_friend:"Mrs. Chen",
+      old_coworker:"David", college_friend:"Amy", neighbour:"Mr. Kim",
+      community_friend:"Grace", sports_buddy:"Kevin"
+    },
+    culturalContext:"Your natural market has strong East Asian community networks. Financial conservatism is common — many contacts prefer guaranteed products over market exposure and are skeptical of financial industry salespeople. Family reputation matters greatly. Many have cross-border financial complexity. Education funding for children is a top priority.",
+  },
+  {
+    id:"black", label:"Black / African", icon:"✊",
+    desc:"African Canadian/American, Caribbean, West African, East African backgrounds",
+    names:{
+      close_family:"Aunt Diane", best_friend:"Marcus", moms_friend:"Ms. Williams",
+      old_coworker:"Andre", college_friend:"Keisha", neighbour:"Jerome",
+      community_friend:"Simone", sports_buddy:"Darius"
+    },
+    culturalContext:"Your natural market has deep community roots and strong church and community organization ties. There is historical distrust of the financial industry — many contacts have been underserved or had bad experiences. The opportunity is significant: generational wealth building is a genuine priority and the 4F Solution education-first approach resonates strongly. Building trust through authenticity is essential.",
+  },
+  {
+    id:"middle_eastern", label:"Middle Eastern / Arab", icon:"🌙",
+    desc:"Lebanese, Syrian, Egyptian, Iranian, Iraqi, Jordanian, Palestinian backgrounds",
+    names:{
+      close_family:"Auntie Fatima", best_friend:"Karim", moms_friend:"Um Hassan",
+      old_coworker:"Omar", college_friend:"Nadia", neighbour:"Walid",
+      community_friend:"Rania", sports_buddy:"Tariq"
+    },
+    culturalContext:"Your natural market has strong family and community cohesion. Business and financial decisions are often made with input from extended family. There may be religious considerations around interest-bearing products. Many contacts are entrepreneurs or self-employed. Hospitality and relationship come before business — rushing to the ask without genuine connection first will backfire.",
+  },
+  {
+    id:"latin", label:"Latin American / Hispanic", icon:"🌺",
+    desc:"Mexican, Colombian, Brazilian, Salvadoran, Guatemalan, Dominican backgrounds",
+    names:{
+      close_family:"Tia Rosa", best_friend:"Carlos", moms_friend:"Senora Reyes",
+      old_coworker:"Miguel", college_friend:"Sofia", neighbour:"Roberto",
+      community_friend:"Elena", sports_buddy:"Diego"
+    },
+    culturalContext:"Your natural market has strong family and community networks with high trust within the community. Family-first financial decisions are the norm — protecting and providing for the family is the primary financial motivator. Many contacts are first or second generation with complex cross-border financial situations. The 4F overview framed around family protection lands particularly well.",
+  },
+  {
+    id:"filipino", label:"Filipino", icon:"🌟",
+    desc:"Filipino-Canadian or Filipino-American backgrounds",
+    names:{
+      close_family:"Tita Carmen", best_friend:"Ryan", moms_friend:"Ate Gloria",
+      old_coworker:"Ronald", college_friend:"Maricel", neighbour:"Noel",
+      community_friend:"Christine", sports_buddy:"Jerome"
+    },
+    culturalContext:"Your natural market is deeply community and church-connected. Word of mouth travels fast — both positive and negative. Family financial obligations are strong including supporting parents and siblings. Nursing, healthcare, and government employment are common — stable income but limited financial planning knowledge. Community trust and financial education gap make this an ideal market for the 4F approach.",
+  },
+  {
+    id:"indigenous", label:"Indigenous / First Nations", icon:"🦅",
+    desc:"First Nations, Metis, Inuit (Canada) or Native American, Alaska Native (US)",
+    names:{
+      close_family:"Auntie Rose", best_friend:"Nathan", moms_friend:"Mary",
+      old_coworker:"James", college_friend:"Leah", neighbour:"Gordon",
+      community_friend:"Sandra", sports_buddy:"Tyler"
+    },
+    culturalContext:"Your natural market has deep community and family ties with significant historical distrust of institutions including financial services. Collective thinking is important — individual financial success is seen in context of community wellbeing. Many contacts have unique financial considerations. The values-first approach of the 4F Solution aligns well with community values. Building authentic relationship before any business conversation is non-negotiable.",
+  },
+  {
+    id:"mixed", label:"Mixed / Multicultural", icon:"🌍",
+    desc:"Diverse background — your natural market is a genuine mix of many cultures",
+    names:{
+      close_family:"Auntie Carol", best_friend:"Marcus", moms_friend:"Mrs. Chen",
+      old_coworker:"Omar", college_friend:"Sofia", neighbour:"Bob",
+      community_friend:"Anita", sports_buddy:"Darius"
+    },
+    culturalContext:"Your natural market is genuinely diverse — a mix of backgrounds, languages, and financial literacy levels. This reflects the reality of many urban Canadian and American communities. Each prospect brings a different cultural context to financial conversations. Your training across this diversity is excellent preparation for real-world practice.",
+  },
+];
+
+
+const REGIONS = {
+  ca: [
+    {id:'western', label:'Western Canada', hint:'BC, Alberta', cities:['Vancouver','Surrey','Burnaby','Calgary','Edmonton','Red Deer','Kelowna','Lethbridge','Kamloops','Saskatoon','Regina']},
+    {id:'prairies', label:'Prairies', hint:'SK, MB', cities:['Saskatoon','Regina','Moose Jaw','Winnipeg','Brandon','Portage la Prairie','Prince Albert','Swift Current']},
+    {id:'ontario', label:'Ontario', hint:'GTA, northern ON', cities:['Toronto','Mississauga','Brampton','Markham','Hamilton','Ottawa','London','Windsor','Kitchener','Barrie','Sudbury']},
+    {id:'quebec', label:'Quebec', hint:'Montreal, QC City', cities:['Montreal','Laval','Quebec City','Gatineau','Longueuil','Sherbrooke','Saguenay','Trois-Rivières']},
+    {id:'atlantic', label:'Atlantic Canada', hint:'NS, NB, NL, PEI', cities:['Halifax','Moncton','Fredericton','Saint John','St. John\'s','Charlottetown','Sydney','Dartmouth']},
+  ],
+  us: [
+    {id:'northeast', label:'Northeast', hint:'NY, NJ, MA, PA', cities:['New York','Brooklyn','Newark','Philadelphia','Boston','Hartford','Providence','Buffalo','Albany']},
+    {id:'southeast', label:'Southeast', hint:'FL, GA, NC, SC', cities:['Miami','Orlando','Tampa','Atlanta','Charlotte','Raleigh','Jacksonville','Savannah']},
+    {id:'midwest', label:'Midwest', hint:'IL, OH, MI, MN', cities:['Chicago','Columbus','Detroit','Minneapolis','Indianapolis','Cleveland','Milwaukee','Kansas City']},
+    {id:'south', label:'South', hint:'TX, LA, TN, AL', cities:['Houston','Dallas','Austin','San Antonio','Nashville','New Orleans','Memphis','Birmingham']},
+    {id:'west', label:'West', hint:'CA, WA, OR, AZ, CO', cities:['Los Angeles','San Jose','San Diego','Seattle','Portland','Phoenix','Denver','Las Vegas','Fresno']},
+  ],
+};
+
+// Per-background city overrides (culturally plausible concentrations)
+const BACKGROUND_CITIES = {
+  south_asian: {ca:['Brampton','Mississauga','Surrey','Edmonton','Calgary','Markham','Scarborough'], us:['Fremont','San Jose','Irving','Sugar Land','Edison','Jersey City','Artesia']},
+  east_asian:  {ca:['Richmond','Burnaby','Markham','Vancouver','Toronto','Mississauga'], us:['San Gabriel','Flushing','Richmond','Monterey Park','Sunnyvale','Bellevue']},
+  black:       {ca:['Brampton','Toronto','Montreal','Halifax','Ottawa'], us:['Atlanta','Houston','Chicago','Detroit','Washington DC','Baltimore','Charlotte']},
+  middle_eastern:{ca:['Ottawa','Montreal','Toronto','Mississauga','Edmonton'], us:['Dearborn','Anaheim','Houston','Paterson','Chicago','Jersey City']},
+  latin:       {ca:['Montreal','Toronto','Vancouver','Ottawa'], us:['Miami','Los Angeles','Houston','Chicago','Dallas','San Antonio','Phoenix']},
+  filipino:    {ca:['Winnipeg','Vancouver','Calgary','Edmonton','Toronto'], us:['Daly City','Los Angeles','Las Vegas','Honolulu','Chicago','Seattle']},
+  indigenous:  {ca:['Saskatoon','Winnipeg','Edmonton','Thunder Bay','Regina'], us:['Albuquerque','Rapid City','Minneapolis','Anchorage','Oklahoma City']},
+};
+
+function getCitiesForBackground(bgId, country) {
+  if (BACKGROUND_CITIES[bgId] && BACKGROUND_CITIES[bgId][country]) {
+    return BACKGROUND_CITIES[bgId][country];
+  }
+  const regions = REGIONS[country] || REGIONS.ca;
+  const all = regions.flatMap(r => r.cities);
+  return all;
+}
+
+function getRandomCity(bgId, country) {
+  const pool = getCitiesForBackground(bgId, country);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── DATA ──
+const PERSONAS=[
+  {
+    id:`carol', name:'Aunt Carol', initial:'C', color:'#c0506a', rel:'Close Family', city:'Calgary`,
+    age:54, gender:'female',
+    life:`Married 28 years to Gerald. Two adult kids, one still at home. Works part-time at a dental office. They own their home in Deer Run — mortgage almost paid off. Gerald has a pension, she has a small RRSP she hasn't looked at in years.`,
+    relationship:`Your dad's sister. She's known you your whole life. When you call out of the blue her first instinct is always "is everything okay?" She loves you but she worries. Has never thought of you in a professional context — you're still the kid at Christmas dinner to her.`,
+    financialMindset:`Assumes they're "fine" — Gerald handles the money. Has a nagging feeling they should look at things but hasn't made it a priority. Not sophisticated about finances at all. The word "investment" makes her slightly nervous.`,
+    naturalObjection:`I'm too busy`,
+    objectionStyle:`Gentle and apologetic — "oh honey, I would love to but things are just so hectic right now." She genuinely means it but it's also partly deflection.`,
+    saysYesWhen:`You make it about the family and keep it light. "I just want to make sure you and Gerald have the full picture" works. She responds to care, not to logic.`,
+    killsCall:`Any pressure, any urgency, any hint that she needs to make a decision. If it feels like she's being sold to she goes quiet and politely ends it.`,
+    voiceStyle:'Warm, chatty. Asks about your mom first. Laughs easily. Texts in full sentences with punctuation. Occasionally uses a heart emoji.',
+    smsStyle:'Full sentences, warm. Responds within an hour if she likes the message. Will ignore a text that feels impersonal.',
+  },
+  {
+    id:`mike', name:'Mike', initial:'M', color:'#2a6ad8', rel:'Best Friend', city:'Edmonton`,
+    age:34, gender:'male',
+    life:'Married to Sarah, two kids under 6. Works in industrial sales — good income but inconsistent. They have a house in Spruce Grove, car payment, daycare costs. Feels like money goes out faster than it comes in. Has a group RRSP through work he never looks at.',
+    relationship:`Best friend since grade 9. You've seen each other through everything. He'll tease you mercilessly but would do anything for you. Has never seen you in a business context and will find it hilarious at first.`,
+    financialMindset:`Knows he should be doing more but feels overwhelmed by the day-to-day. "We'll sort it out when the kids are in school." Classic "I'm too busy right now" mindset — genuinely, not as an excuse.`,
+    naturalObjection:`I'm too busy`,
+    objectionStyle:`Honest and a bit self-deprecating — "dude I can barely remember to pay the credit card on time." He laughs it off but there's real stress under it.`,
+    saysYesWhen:`You don't make it weird. Keep the banter going, be real with him, and land the ask naturally — "I'm not going to pitch you anything, I just think there's a thing you'd actually find useful." He says yes to you, not to a concept.`,
+    killsCall:`The moment it sounds like a rehearsed script he will call it out — "okay who are you and what have you done with Ryan." He shuts down if it feels fake.`,
+    voiceStyle:`Casual, jokes around, talks over you a bit. Texts in fragments. Uses "lol" and "haha" constantly. Replies fast.`,
+    smsStyle:'Short, informal. Lots of emoji. Will reply immediately if it sounds like you. Will leave it on read if it sounds like a mass text.',
+  },
+  {
+    id:`linda', name:'Linda', initial:'L', color:'#7040c8', rel:"Mom's Friend", city:'Calgary`,
+    age:58, gender:'female',
+    life:`Divorced 8 years ago. Works as an office manager at a law firm. Good steady income but hasn't recovered financially from the divorce as much as she'd like. Her RRSP was split. Rents now. Daughter is at U of A. Quietly worried about retirement but hasn't faced it head-on.`,
+    relationship:`Your mom's closest friend since before you were born. She's watched you grow up. Has genuine affection for you. But calling her about finances feels oddly formal — she's used to seeing you at your mom's kitchen table.`,
+    financialMindset:`More financially aware than she lets on — the divorce taught her hard lessons. But she's also had bad experiences with financial people who didn't listen. Protective of her time and her trust. Has an "advisor" she's not sure she likes but hasn't switched.`,
+    naturalObjection:'I already have an advisor',
+    objectionStyle:`Said politely but firmly. "I appreciate it sweetie but I do have someone I work with already." Not hostile — she just means it.`,
+    saysYesWhen:`You acknowledge her advisor exists and don't try to compete with them. "This isn't about replacing anyone — it's just education, and I think there might be something in it that's relevant to where you're at." She responds to being understood, not sold.`,
+    killsCall:`Anything that sounds like you're criticising her current advisor or implying she's made poor decisions. She'll get quiet and polite-cold.`,
+    voiceStyle:'Measured and warm but with a professional edge. Articulate. Texts carefully — no abbreviations, proper punctuation.',
+    smsStyle:`Thoughtful replies. Takes her time. Won't reply to anything that feels dismissive of her situation.`,
+  },
+  {
+    id:`dave', name:'Dave', initial:'D', color:'#1a9060', rel:'Old Coworker', city:'Red Deer`,
+    age:42, gender:'male',
+    life:`Married, two teenagers. Works in project management at an engineering firm. Good income. Has a mortgage, a rental property he manages himself, and a self-directed RRSP he actively watches. Thinks he's on top of things — and mostly is — but has blind spots he doesn't know about.`,
+    relationship:'You worked together for three years. Mutual respect. Not close friends but solid. Lost touch after he moved to Red Deer. The call will feel a bit out of the blue but not weird — you two always liked each other.',
+    financialMindset:`"I've got it handled." Confident about money, reads financial news, has opinions. His real gap is tax efficiency and estate planning — he's optimising the pieces but doesn't have a full picture. Won't admit he might be missing something easily.`,
+    naturalObjection:`My finances are simple / I've got it covered`,
+    objectionStyle:`Direct and a bit dismissive initially — "yeah I'm pretty good on that front." Not rude, just confident. Needs a reason to listen, not warmth.`,
+    saysYesWhen:`You give him something concrete. "Most people in your situation — good income, rental property, RRSP — have at least one gap in the Tax Efficiency piece they didn't know was there." That gets his attention. He responds to specificity and intellectual challenge.`,
+    killsCall:`Vagueness. If you can't tell him what this is actually about in plain terms he dismisses it immediately. Also hates when people waste his time.`,
+    voiceStyle:'Direct, efficient. Speaks in statements not questions. Texts in bullet-point fashion mentally even if not literally. Replies same day.',
+    smsStyle:'Short and direct. Gets to the point. Ignores texts that are too long or too vague.',
+  },
+  {
+    id:`jess', name:'Jess', initial:'J', color:'#b87020', rel:'College Friend', city:'Calgary`,
+    age:31, gender:'female',
+    life:`Single, rents a condo in Beltline. Works in marketing at a tech startup — decent salary but irregular bonus structure. Has student debt she's slowly paying down. Some TFSA savings. Thinks about money but doesn't feel like she has enough to warrant "planning." Experiences financial anxiety but doesn't talk about it.`,
+    relationship:`Were close at university, drifted after graduation. You've kept up on Instagram. The call is a surprise — she'll be both happy and slightly wary about why you're reaching out after a gap.`,
+    financialMindset:`Feels like financial planning is "for people who have more figured out than she does." Doesn't realise the 4F overview is exactly for where she is now. Has a mild distrust of the financial industry from watching her parents deal with a bad advisor.`,
+    naturalObjection:`I'm too busy / my finances are too simple`,
+    objectionStyle:`Self-deprecating deflection — "oh god I'm the worst person to talk to about money, I have like $400 in savings." Laughs it off but it comes from real anxiety.`,
+    saysYesWhen:`You meet her where she is. "Honestly this is especially useful for people who feel like they're not there yet — that's kind of the whole point." She responds to being normalised, not impressed.`,
+    killsCall:`Any sense of judgment about where she's at financially. Also — if the reconnection feels like it was just a pretext to pitch her, she'll feel used and close off completely.`,
+    voiceStyle:`Warm, a bit self-conscious. Lots of "like" and "honestly." Texts quickly in short bursts. Uses emoji naturally.`,
+    smsStyle:'Fast and casual. Will reply warmly if the message sounds like the actual you reaching out. Will ghost a corporate-sounding text.',
+  },
+  {
+    id:`bob', name:'Bob', initial:'B', color:'#3a6890', rel:'Neighbour', city:'Airdrie`,
+    age:49, gender:'male',
+    life:`Married to Donna. Three kids, youngest just started high school. Trades — electrician, runs his own small company. Does well but income is lumpy. No pension, self-employed, hasn't set up much for retirement because he's always been reinvesting in the business. Owns his home outright.`,
+    relationship:`Next-door neighbour for four years. You wave in the driveway, have had a few beers in the backyard. Friendly but not deep. He knows you changed careers but doesn't really know what you do now.`,
+    financialMindset:`Self-reliant by nature. "I've been taking care of myself since I was 18." Doesn't like asking for help, especially with money. Has a mental block around financial planning — associates it with suits and commissions and being sold things he doesn't need.`,
+    naturalObjection:`I'm too busy — and mild resistance to the whole concept`,
+    objectionStyle:`Gruff but not hostile. "Yeah I keep meaning to look at that stuff but you know how it is." Protective of his Saturday morning.`,
+    saysYesWhen:`You keep it low-key and neighbour-to-neighbour. No corporate language. "I'm not going to sit here and sell you anything, I just think there's some stuff around the self-employed side that's actually worth knowing about." He responds to peer respect, not sales technique.`,
+    killsCall:'Anything that sounds polished or scripted. He can smell a pitch from a mile away and it immediately puts his back up.',
+    voiceStyle:'Short sentences. Dry humour. Comfortable with silence. Texts rarely and briefly.',
+    smsStyle:`Very short. One or two words is normal for him. Will reply if the message is direct and doesn't oversell. Won't reply to anything that feels like a campaign.`,
+  },
+  {
+    id:`tanya', name:'Tanya', initial:'T', color:'#b04090', rel:'Community Friend', city:'Calgary`,
+    age:38, gender:'female',
+    life:`Married to Marcus, two kids ages 8 and 11. She's a teacher, he's in property management. Combined decent income. They have RRSPs, a mortgage, and are starting to think about the kids' education. Tanya is the financial decision-maker in the house — Marcus defers to her.`,
+    relationship:`Met through a community sports league. See each other regularly. Friendly and warm. She respects you and would genuinely hear you out — she's just busy and protective of her time.`,
+    financialMindset:`Engaged and thoughtful about money. Reads articles, has opinions. Genuinely curious about whether they're doing everything they should be. Would benefit from the 4F overview and would likely know it. Her gap is tax efficiency — she doesn't know what she doesn't know there.`,
+    naturalObjection:`I'm too busy — but genuinely open once she understands what it is`,
+    objectionStyle:`Pragmatic — "I'd love to but between work and the kids I barely have time to breathe." She means it, but she's also a yes if the value is clear.`,
+    saysYesWhen:`You tell her it's 45 minutes and give her a reason it's relevant to where they're at — kids, mortgage, dual income. She's an organiser; she responds to "here's what we'll cover and why it matters to you specifically."`,
+    killsCall:`Vagueness about what the meeting actually is. She doesn't have time to show up to something unclear.`,
+    voiceStyle:'Warm, organised, asks clarifying questions. Texts well — complete thoughts, emoji occasionally. Schedules things.',
+    smsStyle:`Responds thoughtfully. Will ask "what's it about?" — that's not resistance, that's her decision-making process. Answer it simply.`,
+  },
+  {
+    id:`kevin', name:'Kevin', initial:'K', color:'#c86020', rel:'Sports Buddy', city:'Edmonton`,
+    age:36, gender:'male',
+    life:`Common-law with Ashley, no kids yet but talking about it. Works in oil and gas — good money but cyclical, has been laid off twice. Has an RRSP and some investments he set up years ago and hasn't checked since. Buys toys — truck, snowmobile, season tickets. Doesn't think about the future much.`,
+    relationship:'Hockey league, four years. You have a good time together on the ice and at the bar after. He knows you changed jobs. Will give you a hard time about it in a friendly way before taking it seriously.',
+    financialMindset:`Lives for today. Not irresponsible, just not future-focused. Has heard "you should get your finances sorted" before and it goes in one ear and out the other — unless someone makes it feel relevant to his actual life.`,
+    naturalObjection:`I'm too busy / "I'm good man"`,
+    objectionStyle:`Deflects with humour first — "I got the Leafs to worry about, I don't have time for this stuff." Then if pushed he goes quieter and more serious: "honestly my finances are a mess, I wouldn't even know where to start."`,
+    saysYesWhen:`You make it concrete and non-threatening. "I promise it's not as boring as it sounds — there's actually stuff in here that's relevant when you and Ashley are thinking about the next step." Future-focused without being heavy.`,
+    killsCall:`Any lecture about not saving enough or not being prepared. He knows. He doesn't need to hear it from you.`,
+    voiceStyle:'Loud, jovial, jokes constantly. Gets serious fast if you match his energy first. Texts in short bursts with a lot of voice note energy.',
+    smsStyle:'Short, emoji-heavy, lots of hockey references. Replies fast when on his phone. Ignores anything that sounds corporate.',
+  },
+];
+
+const PERSONAS_US=[
+  {
+    id:`carol', name:'Aunt Carol', initial:'C', color:'#c0506a', rel:'Close Family', city:'Phoenix, AZ`,
+    age:54, gender:'female',
+    life:`Married 28 years to Gerald. Two adult kids, one still at home. Works part-time at a dental office. They own their home in Chandler — mortgage almost paid. Gerald has a 401(k) through his company, she has a small IRA she hasn't looked at in years.`,
+    relationship:`Your dad's sister. She's known you your whole life. When you call out of the blue her first instinct is always "is everything okay?" She loves you but she worries. Has never thought of you in a professional context — you're still the kid at Christmas dinner to her.`,
+    financialMindset:`Assumes they're "fine" — Gerald handles the money. Has a nagging feeling they should look at things but hasn't made it a priority. Not sophisticated about finances. The word "investment" makes her slightly nervous. Medicare is coming up and she hasn't thought about what that means.`,
+    naturalObjection:`I'm too busy`,
+    objectionStyle:`Gentle and apologetic — "oh honey, I would love to but things are just so hectic right now." She genuinely means it but it's also partly deflection.`,
+    saysYesWhen:`You make it about the family and keep it light. "I just want to make sure you and Gerald have the full picture" works. She responds to care, not to logic.`,
+    killsCall:`Any pressure, any urgency, any hint that she needs to make a decision. If it feels like she's being sold to she goes quiet and politely ends it.`,
+    voiceStyle:'Warm, chatty. Asks about your mom first. Laughs easily. Texts in full sentences with punctuation.',
+    smsStyle:'Full sentences, warm. Responds within an hour if she likes the message. Will ignore a text that feels impersonal.',
+  },
+  {
+    id:`mike', name:'Mike', initial:'M', color:'#2a6ad8', rel:'Best Friend', city:'Dallas, TX`,
+    age:34, gender:'male',
+    life:`Married to Sarah, two kids under 6. Works in industrial sales — good income but inconsistent. They have a house in Frisco, car payment, daycare costs. Has a 401(k) through work he's never maximized. Feels like money goes out faster than it comes in.`,
+    relationship:`Best friend since grade 9. You've seen each other through everything. He'll tease you mercilessly but would do anything for you. Has never seen you in a business context and will find it hilarious at first.`,
+    financialMindset:`Knows he should be doing more but feels overwhelmed by the day-to-day. "We'll sort it out when the kids are in school." Classic "I'm too busy right now" mindset — genuinely, not as an excuse.`,
+    naturalObjection:`I'm too busy`,
+    objectionStyle:`Honest and a bit self-deprecating — "dude I can barely keep up with the mortgage, I don't have time for this." He laughs it off but there's real stress under it.`,
+    saysYesWhen:`You don't make it weird. Keep the banter going, be real with him, land the ask naturally — "I'm not going to pitch you anything, I just think there's a thing you'd actually find useful." He says yes to you, not to a concept.`,
+    killsCall:'The moment it sounds like a rehearsed script he will call it out. He shuts down if it feels fake.',
+    voiceStyle:`Casual, jokes around, talks over you a bit. Texts in fragments. Uses "lol" and "haha" constantly. Replies fast.`,
+    smsStyle:'Short, informal. Lots of emoji. Will reply immediately if it sounds like you. Will leave it on read if it sounds like a mass text.',
+  },
+  {
+    id:`linda', name:'Linda', initial:'L', color:'#7040c8', rel:"Mom's Friend", city:'Scottsdale, AZ`,
+    age:58, gender:'female',
+    life:`Divorced 8 years ago. Works as an office manager at a law firm. Good steady income but didn't recover financially from the divorce as well as she'd like. Her 401(k) was split. Rents a condo. Daughter is at ASU. Quietly worried about retirement — Social Security won't be enough on its own.`,
+    relationship:`Your mom's closest friend since before you were born. She's watched you grow up. Has genuine affection for you. But calling her about finances feels oddly formal — she's used to seeing you at your mom's kitchen table.`,
+    financialMindset:`More financially aware than she lets on — the divorce taught her hard lessons. Protective of her trust. Has a financial advisor she's not sure she likes.`,
+    naturalObjection:'I already have an advisor',
+    objectionStyle:`Said politely but firmly. "I appreciate it sweetie but I do have someone I work with already." Not hostile — she just means it.`,
+    saysYesWhen:`You acknowledge her advisor exists and don't try to compete. "This isn't about replacing anyone — it's just education." She responds to being understood, not sold.`,
+    killsCall:`Anything that sounds like you're criticising her current advisor or implying she's made poor decisions.`,
+    voiceStyle:'Measured and warm but with a professional edge. Articulate. Texts carefully — no abbreviations.',
+    smsStyle:`Thoughtful replies. Takes her time. Won't reply to anything dismissive of her situation.`,
+  },
+  {
+    id:`dave', name:'Dave', initial:'D', color:'#1a9060', rel:'Old Coworker', city:'Denver, CO`,
+    age:42, gender:'male',
+    life:`Married, two teenagers. Works in project management at an engineering firm. Good income. Has a mortgage, a rental property he manages himself, and a Roth IRA he actively manages. Thinks he's on top of things — and mostly is — but has blind spots around tax strategy he doesn't know about.`,
+    relationship:'You worked together for three years. Mutual respect. Not close friends but solid. Lost touch after he moved to Denver. The call will feel a bit out of the blue but not weird.',
+    financialMindset:`"I've got it handled." Confident, reads financial news, has opinions. His real gap is tax efficiency and estate planning — he doesn't have a full picture.`,
+    naturalObjection:`My finances are simple / I've got it covered`,
+    objectionStyle:`Direct and a bit dismissive initially — "yeah I'm pretty good on that front." Not rude, just confident. Needs a reason to listen.`,
+    saysYesWhen:`You give him something concrete. "Most people in your situation — rental property, Roth IRA — have at least one gap in the Tax Efficiency piece they didn't know was there." He responds to specificity.`,
+    killsCall:`Vagueness. If you can't tell him what this is actually about in plain terms he dismisses it.`,
+    voiceStyle:'Direct, efficient. Gets to the point. Replies same day.',
+    smsStyle:'Short and direct. Ignores texts that are too long or too vague.',
+  },
+  {
+    id:`jess', name:'Jess', initial:'J', color:'#b87020', rel:'College Friend', city:'Seattle, WA`,
+    age:31, gender:'female',
+    life:`Single, rents an apartment in Capitol Hill. Works in marketing at a tech startup — decent salary but irregular RSU vesting. Has student loans she's slowly paying down. Some Roth IRA savings. Experiences financial anxiety but doesn't talk about it much.`,
+    relationship:`Were close at university, drifted after graduation. Kept up on Instagram. The call is a surprise — she'll be both happy and slightly wary about why you're reaching out.`,
+    financialMindset:`Feels like financial planning is "for people who have more figured out." Doesn't realise the 4F overview is for where she is right now. Mild distrust of the financial industry.`,
+    naturalObjection:`I'm too busy / my finances are too simple`,
+    objectionStyle:`Self-deprecating deflection — "oh god I'm the worst person to talk to about money." Laughs it off but it comes from real anxiety.`,
+    saysYesWhen:`You meet her where she is. "Honestly this is especially useful for people who feel like they're not there yet." She responds to being normalised, not impressed.`,
+    killsCall:`Any sense of judgment about where she's at financially. Also — if the reconnection feels like a pretext to pitch her.`,
+    voiceStyle:`Warm, a bit self-conscious. Lots of "like" and "honestly." Texts quickly in short bursts.`,
+    smsStyle:'Fast and casual. Warms up if it sounds like the real you. Ghosts a corporate-sounding text.',
+  },
+  {
+    id:`bob', name:'Bob', initial:'B', color:'#3a6890', rel:'Neighbour', city:'Calgary (US posting — change city)`,
+    age:49, gender:'male',
+    life:`Married to Donna. Three kids, youngest just started high school. Contractor — runs his own electrical business. Does well but income is lumpy. No pension, self-employed, SEP-IRA he set up years ago but hasn't contributed to recently. Owns his home outright.`,
+    relationship:'Next-door neighbour for four years. You wave in the driveway, have had a few beers in the backyard. Friendly but not deep.',
+    financialMindset:`Self-reliant by nature. "I've been taking care of myself since I was 18." Has a mental block around financial planning — associates it with commissions and being sold things.`,
+    naturalObjection:`I'm too busy — and mild resistance to the whole concept`,
+    objectionStyle:`Gruff but not hostile. "Yeah I keep meaning to look at that stuff but you know how it is."`,
+    saysYesWhen:`You keep it low-key and neighbour-to-neighbour. "I'm not going to sit here and sell you anything, I just think there's some stuff around the self-employed side that's worth knowing about."`,
+    killsCall:'Anything that sounds polished or scripted. He can smell a pitch from a mile away.',
+    voiceStyle:'Short sentences. Dry humour. Comfortable with silence.',
+    smsStyle:`Very short. One or two words is normal. Won't reply to anything that feels like a campaign.`,
+  },
+  {
+    id:`tanya', name:'Tanya', initial:'T', color:'#b04090', rel:'Community Friend', city:'Austin, TX`,
+    age:38, gender:'female',
+    life:`Married to Marcus, two kids ages 8 and 11. She's a teacher, he's in property management. Combined decent income. They have 403(b) and 401(k) accounts, a mortgage, and starting to think about the kids' 529 plans. Tanya is the financial decision-maker in the house.`,
+    relationship:'Met through a community sports league. See each other regularly. Friendly and warm. She respects you and would genuinely hear you out.',
+    financialMindset:`Engaged and thoughtful. Genuinely curious about whether they're doing everything they should be. Her gap is tax efficiency at the distribution stage.`,
+    naturalObjection:`I'm too busy — but genuinely open once she understands what it is`,
+    objectionStyle:`Pragmatic — "I'd love to but between work and the kids I barely have time to breathe." She means it, but she's a yes if the value is clear.`,
+    saysYesWhen:`You tell her it's 45 minutes and give her a concrete reason it's relevant — kids, dual income, 529s. She responds to specificity and scheduling.`,
+    killsCall:'Vagueness about what the meeting actually is.',
+    voiceStyle:'Warm, organised, asks clarifying questions.',
+    smsStyle:`Responds thoughtfully. Will ask "what's it about?" — that's her decision process, not resistance.`,
+  },
+  {
+    id:`kevin', name:'Kevin', initial:'K', color:'#c86020', rel:'Sports Buddy', city:'Houston, TX`,
+    age:36, gender:'male',
+    life:`Common-law with Ashley, no kids yet but talking about it. Works in oil and gas — good money but cyclical, been laid off twice. Has a 401(k) and some investments he set up years ago and hasn't checked since. Buys toys — truck, boat, season tickets. Doesn't think about the future much.`,
+    relationship:'Fantasy football league and pickup basketball, four years. You have a good time together. He knows you changed jobs and will give you a hard time about it in a friendly way.',
+    financialMindset:`Lives for today. Not irresponsible, just not future-focused. Has heard "you should get your finances sorted" before and it goes in one ear and out the other.`,
+    naturalObjection:`I'm too busy / "I'm good man"`,
+    objectionStyle:`Deflects with humour first — "I got fantasy to worry about, I don't have time for this stuff." Then if pushed: "honestly my finances are a mess, I wouldn't even know where to start."`,
+    saysYesWhen:`You make it concrete and non-threatening. "There's actually stuff in here that's relevant when you and Ashley are thinking about the next step." Future-focused without being heavy.`,
+    killsCall:`Any lecture about not saving enough or not being prepared. He knows. He doesn't need to hear it.`,
+    voiceStyle:'Loud, jovial, jokes constantly. Gets serious fast if you match his energy first.',
+    smsStyle:'Short, emoji-heavy, lots of sports references. Replies fast. Ignores anything corporate.',
+  },
+];
+
+function getPersonas(){ return cfg.country==='us'?PERSONAS_US:PERSONAS; }
+
+const TIERS=[
+  {id:'close',label:'❤️ Close / BFF',desc:'Phone first — relationship earns the direct call'},
+  {id:'good',label:'😊 Good Friend',desc:'Phone or SMS — you decide'},
+  {id:'acquaint',label:'🤝 Acquaintance',desc:'SMS first — less intrusive'},
+  {id:'lapsed',label:'⏳ Lapsed',desc:'SMS first — acknowledge the gap'},
+];
+
+const RF_ENTRIES={
+  permission:{title:'Asking permission to send',ctx:"You are practicing asking ${name} for permission to send them a Rapidfunnel. You haven\'t sent it yet. The ask is natural and low-pressure — \"I\'d love to send you something short, would that be okay?\""},
+  sent:{title:'Sent it, no reply yet',ctx:"You sent ${name} a Rapidfunnel 24-48 hours ago. They haven\'t opened or replied yet. You\'re following up naturally to make sure it arrived and create curiosity."},
+  watched:{title:'They watched the sizzle',ctx:"${name} opened your Rapidfunnel and watched the sizzle video. They know something is coming. You\'re following up to thank them for watching and book the 4F Solution overview."},
+  questions:{title:'Watched and has questions',ctx:"${name} watched your Rapidfunnel and is reaching out with questions. They\'re curious — but you must answer briefly and book the 4F overview rather than presenting everything now."},
+  postsend:{title:'After initial contact',ctx:"You already had an initial phone call, SMS, or email with ${name}. You\'re now offering to send them a Rapidfunnel as a follow-up resource to keep the conversation going."},
+  reengaging:{title:'Re-engaging a cold contact',ctx:"${name} went cold after previous contact. You\'re using Rapidfunnel to restart the conversation naturally and non-invasively."},
+};
+
+// ── STATE ──
+let cfg={market:null,channel:null,tier:'close',useRF:null,rfEntry:null,persona:'mike',mood:'neutral',country:'ca',region:null,background:'european'};
+let agentPersonaNames={}; // custom names keyed by persona id
+let agentName='',agentCompany='';
+let sessionHistory=[],sessionScores={},sessionTurn=0,sessionProcessing=false;
+let recognition=null,listening=false,muted=false,timerInterval=null,callSeconds=0;
+const synth=window.speechSynthesis;
+
+// ── SETUP LOGIC ──
+function setCountry(c){
+  cfg.country=c;cfg.region=null;
+  ['ca','us'].forEach(x=>{
+    const el=document.getElementById('ctry-'+x);
+    el.className='choice-btn'+(x===c?' sel':'');
+  });
+  buildRegionGrid();
+  buildBackgroundGrid();
+  cfg.region=null;
+  const sel=document.getElementById('region-select');
+  if(sel) sel.value='';
+  if(!document.getElementById('sc-prospect').classList.contains('locked')) buildPersonaGrid();
+}
+
+function buildRegionGrid(){
+  const regions=REGIONS[cfg.country]||REGIONS.ca;
+  const sel=document.getElementById('region-select');
+  if(!sel) return;
+  const current=cfg.region||'';
+  sel.innerHTML='<option value="">Select a region...</option>'+
+    regions.map(r=>`<option value="${r.id}" ${r.id===current?'selected':''}>${r.label} — ${r.hint}</option>`).join('');
+}
+
+function setRegion(id){
+  cfg.region=id;
+  checkReady();
+}
+
+function buildBackgroundGrid(){
+  const sel=document.getElementById('background-select');
+  if(!sel) return;
+  const current=cfg.background||'';
+  sel.innerHTML='<option value="">Select a background...</option>'+
+    BACKGROUNDS.map(b=>`<option value="${b.id}" ${b.id===current?'selected':''}>${b.icon} ${b.label} — ${b.desc.substring(0,50)}...</option>`).join('');
+}
+
+function setBackground(id){
+  cfg.background=id;
+  const bg=BACKGROUNDS.find(b=>b.id===id);
+  if(bg){
+    const roleMap={
+      close_family:"carol", best_friend:"mike", moms_friend:"linda",
+      old_coworker:"dave", college_friend:"jess", neighbour:"bob",
+      community_friend:"tanya", sports_buddy:"kevin"
+    };
+    Object.entries(bg.names).forEach(([role, defaultName])=>{
+      const pid=roleMap[role];
+      if(pid){
+        agentPersonaNames[pid]=defaultName;
+        const inp=document.getElementById('pname-'+pid);
+        if(inp) inp.value=defaultName;
+      }
+    });
+  }
+  buildPersonaNameInputs();
+  document.getElementById('persona-names-section').style.display='block';
+  checkReady();
+}
+function buildPersonaNameInputs(){
+  const bg=BACKGROUNDS.find(b=>b.id===cfg.background)||BACKGROUNDS[0];
+  const roleMap=[
+    {pid:'carol',role:'close_family',relLabel:'Close family'},
+    {pid:'mike',role:'best_friend',relLabel:'Best friend'},
+    {pid:'linda',role:'moms_friend',relLabel:"Mom's / family friend"},
+    {pid:'dave',role:'old_coworker',relLabel:'Old coworker'},
+    {pid:'jess',role:'college_friend',relLabel:'College / school friend'},
+    {pid:'bob',role:'neighbour',relLabel:'Neighbour'},
+    {pid:'tanya',role:'community_friend',relLabel:'Community friend'},
+    {pid:'kevin',role:'sports_buddy',relLabel:'Sports buddy'},
+  ];
+  document.getElementById('persona-name-inputs').innerHTML=roleMap.map(({pid,role,relLabel})=>{
+    const defaultName=bg.names[role]||pid;
+    const currentName=agentPersonaNames[pid]||defaultName;
+    return `<div>
+      <div class="nf-label" style="font-size:0.62rem;margin-bottom:3px">${relLabel}</div>
+      <input class="nf-input" id="pname-${pid}" type="text" value="${currentName}" maxlength="30"
+        placeholder="${defaultName}" oninput="agentPersonaNames['${pid}']=this.value">
+    </div>`;
+  }).join('');
+}
+
+function setMarket(m){
+  cfg.market=m;
+  ['natural','possibility'].forEach(x=>document.getElementById('mb-'+x).className='choice-btn'+(x===m?' sel-'+(m==='natural'?'green':'blue'):''));
+  document.getElementById('ch-market').textContent=m==='natural'?'Natural Market':'Possibility Market';
+  document.getElementById('ch-market').style.display='block';
+  document.getElementById('sc-market').classList.add('done');
+  unlock('sc-channel');
+  // Update badges and hints based on market
+  if(m==='possibility'){
+    document.getElementById('phone-badge').textContent='Cold call';
+    document.getElementById('sms-badge').textContent='Cold SMS';
+    document.getElementById('email-badge').textContent='Recommended for cold';
+  } else {
+    document.getElementById('phone-badge').textContent='Close family / best friend';
+    document.getElementById('sms-badge').textContent='Acquaintance / lapsed';
+    document.getElementById('email-badge').textContent='Any tier';
+  }
+  // Reset downstream
+  cfg.channel=null;cfg.useRF=null;cfg.rfEntry=null;
+  lock('sc-rf');lock('sc-prospect');
+  document.getElementById('ch-channel').style.display='none';
+  document.getElementById('ch-rf').style.display='none';
+  document.getElementById('tier-section').style.display='none';
+  document.getElementById('rf-entry-section').style.display='none';
+  ['phone','sms','email'].forEach(x=>document.getElementById('cb-'+x).className='choice-btn');
+  ['no','yes'].forEach(x=>document.getElementById('rf-'+x).className='choice-btn'+(x==='yes'?' rf-yes':''));
+  document.getElementById('rf-no').className='choice-btn';
+  document.getElementById('rf-yes').className='choice-btn';
+  checkReady();
+}
+
+function setChannel(ch){
+  cfg.channel=ch;
+  ['phone','sms','email'].forEach(x=>{
+    const el=document.getElementById('cb-'+x);
+    el.className='choice-btn'+(x===ch?' sel':'');
+  });
+  document.getElementById('ch-channel').textContent={phone:'📞 Phone',sms:'💬 SMS',email:'📧 Email'}[ch];
+  document.getElementById('ch-channel').style.display='block';
+  document.getElementById('sc-channel').classList.add('done');
+  // Show tier only for natural market phone/sms
+  const showTier=cfg.market==='natural';
+  document.getElementById('tier-section').style.display=showTier?'block':'none';
+  if(showTier) buildTierGrid();
+  unlock('sc-rf');
+  checkReady();
+}
+
+function buildTierGrid(){
+  document.getElementById('tier-grid').innerHTML=TIERS.map(t=>`
+    <div class="detail-btn ${t.id===cfg.tier?'sel':''}" id="tier-${t.id}" onclick="setTier('${t.id}')">
+      <div class="db-name" style="font-size:0.72rem">${t.label}</div>
+      <div class="db-sub">${t.desc}</div>
+    </div>`).join('');
+}
+function setTier(t){cfg.tier=t;TIERS.forEach(x=>document.getElementById('tier-'+x.id)?.classList.toggle('sel',x.id===t));}
+
+function setRF(v){
+  cfg.useRF=v;cfg.rfEntry=null;
+  document.getElementById('rf-no').className='choice-btn'+(v===false?' sel':'');
+  document.getElementById('rf-yes').className='choice-btn'+(v===true?' rf-yes sel-purple':'');
+  document.getElementById('ch-rf').textContent=v?'⚡ Rapidfunnel':'🚫 Direct';
+  document.getElementById('ch-rf').style.display='block';
+  document.getElementById('sc-rf').classList.add('done');
+  document.getElementById('rf-entry-section').style.display=v?'block':'none';
+  if(!v){Object.keys(RF_ENTRIES).forEach(k=>document.getElementById('rfe-'+k).className='choice-btn');}
+  unlock('sc-prospect');
+  buildPersonaGrid();
+  checkReady();
+}
+
+function setRFEntry(e){
+  cfg.rfEntry=e;
+  Object.keys(RF_ENTRIES).forEach(k=>document.getElementById('rfe-'+k).className='choice-btn'+(k===e?' sel-purple':''));
+  checkReady();
+}
+
+function buildPersonaGrid(){
+  const grid=document.getElementById('persona-grid');
+  grid.innerHTML=getPersonas().map(p=>`
+    <div class="detail-btn ${p.id===cfg.persona?'sel':''}" id="pb-${p.id}" onclick="selectPersona('${p.id}')">
+      <div class="db-av" style="background:${p.color}">${p.initial}</div>
+      <div class="db-name">${p.name}</div>
+      <div class="db-sub">${p.rel}</div>
+    </div>`).join('');
+}
+function selectPersona(id){cfg.persona=id;getPersonas().forEach(p=>document.getElementById('pb-'+p.id)?.classList.toggle('sel',p.id===id));}
+
+function setMood(m){
+  cfg.mood=m;
+  ['warm','neutral','cold'].forEach(x=>{const el=document.getElementById('mood-'+x);el.className='mood-btn'+(x===m?' sel-'+x:'');});
+}
+
+function unlock(id){document.getElementById(id).classList.remove('locked');}
+function lock(id){document.getElementById(id).classList.add('locked');}
+
+function checkReady(){
+  const rfOk=cfg.useRF===false||(cfg.useRF===true&&cfg.rfEntry!==null);
+  const ready=cfg.market&&cfg.channel&&cfg.useRF!==null&&rfOk&&cfg.region&&cfg.background;
+  const btn=document.getElementById('start-btn');
+  btn.disabled=!ready;
+  if(ready){
+    const labels={phone:'📞 Start Phone Call',sms:'💬 Start SMS Session',email:'📧 Start Email Session'};
+    btn.textContent=labels[cfg.channel]||'▶ Start Session';
+    btn.className='start-btn'+(cfg.channel==='sms'?' blue':cfg.useRF?' purple':'');
+  } else {
+    btn.textContent='Choose your options above to begin';
+    btn.className='start-btn';
+  }
+  if(ready&&document.getElementById('sc-prospect').classList.contains('locked')) unlock('sc-prospect');
+  if(ready) buildPersonaGrid();
+}
+
+// ── BUILD SYSTEM PROMPT ──
+function buildSystem(){
+  const p=PERSONAS.find(x=>x.id===cfg.persona);
+  const countryCtx=cfg.country==='us'
+    ?'US FINANCIAL CONTEXT: Use US terminology — 401(k), Roth IRA, HSA, Social Security, Medicare. Refer to amounts in USD.'
+    :'CANADIAN FINANCIAL CONTEXT: Use Canadian terminology — RRSP, TFSA, FHSA, CPP, OAS, GIC. Refer to amounts in CAD.';
+  const bg=BACKGROUNDS.find(b=>b.id===cfg.background)||BACKGROUNDS[0];
+  const bgCtx=bg.culturalContext||'';
+  const sessionCity=cfg._sessionCity||p.city||'';
+
+  const moodCtx={
+    warm:`${p.name} is relaxed and in a good mood. Open and patient.`,
+    neutral:`${p.name} is fairly busy but willing to give a few minutes.`,
+    cold:`${p.name} is stressed. Will raise real objections: "I'm too busy," "I already have an advisor," "My finances are simple," "You just started — how can you help me?"`
+  }[cfg.mood];
+
+  const marketCtx=cfg.market==='natural'
+    ?`This is a NATURAL MARKET contact. ${agentName} and ${p.name} already know each other personally — ${p.rel.toLowerCase()}. The relationship exists — ${agentName} is introducing their new professional role for the first time.`
+    :`This is a POSSIBILITY MARKET contact. ${p.name} does NOT know ${agentName} personally. ${agentName} is seen as a professional from first contact. No personal relationship to leverage.`;
+
+  const tierCtx=cfg.market==='natural'?{
+    close:`${p.name} has deep love and trust for ${agentName}. The awkwardness is mixing the personal relationship with business for the first time. Their natural objection style: ${p.objectionStyle||'gentle and warm'}`,
+    good:`${p.name} knows ${agentName} well. Curious but cautious. Their natural objection style: ${p.objectionStyle||'friendly but non-committal'}`,
+    acquaint:`${p.name} and ${agentName} are familiar but not close. Less goodwill — context must be established quickly. Their natural objection style: ${p.objectionStyle||'polite but guarded'}`,
+    lapsed:`${p.name} and ${agentName} have history but drifted apart. "Why now?" feeling. Reconnection must come before business. Their natural objection style: ${p.objectionStyle||'warm but wary'}`
+  }[cfg.tier]:'';
+
+  const rfCtx=cfg.useRF&&cfg.rfEntry
+    ?`\nRAPIDFUNNEL CONTEXT: ${RF_ENTRIES[cfg.rfEntry].ctx.replace(/\$\{name\}/g,p.name)}`:'';
+
+  const goalCtx=cfg.useRF
+    ?`The goal is to ${cfg.rfEntry==='permission'?`get ${p.name}'s permission to send a Rapidfunnel — natural and low pressure`
+      :cfg.rfEntry==='watched'||cfg.rfEntry==='questions'?`book a 45-minute complimentary 4F Solution educational overview — NOT to present it now`
+      :`advance the Rapidfunnel conversation and ultimately book a 45-minute 4F Solution educational overview`}. Nothing is for sale.`
+    :`The goal is to book a 45-minute complimentary 4F Solution educational overview — Cash Flow, Protection, Growth, Tax Efficiency. Nothing is for sale. This is education.`;
+
+  const channelCtx={
+    phone:'This is a phone call — keep responses 1-4 sentences like a real person on the phone.',
+    sms:'This is an SMS text message exchange — keep responses 1-2 short sentences, casual natural texting language.',
+    email:'This is an email exchange — write like a real person replying to an email. 3-6 sentences.'
+  }[cfg.channel];
+
+  const skills=getSkillDefs();
+  const validTags=skills.map(s=>s.tags).flat().join(' ');
+
+  return `You are roleplaying as ${p.name}${p.age?', age '+p.age:''}. ${p.gender==='female'?'She/her.':'He/him.'}
+
+WHO THEY ARE:
+${p.life||p.desc}
+
+YOUR RELATIONSHIP WITH ${agentName.toUpperCase()}:
+${p.relationship||'You know each other personally.'}
+
+THEIR FINANCIAL MINDSET:
+${p.financialMindset||'Cautious and not very financially engaged.'}
+
+THEIR NATURAL OBJECTION: "${p.naturalObjection||"I'm too busy"}"
+How they deliver it: ${p.objectionStyle||'Politely but with genuine conviction.'}
+
+WHAT MAKES THEM SAY YES:
+${p.saysYesWhen||'Genuine warmth and a low-pressure, education-first ask.'}
+
+WHAT KILLS THE CALL:
+${p.killsCall||'Sales pressure or a scripted feel.'}
+
+HOW THEY COMMUNICATE (${cfg.channel==='sms'?'texting':'on the phone'}):
+${cfg.channel==='sms'?(p.smsStyle||'Short, casual texts.'):(p.voiceStyle||'Natural and conversational.')}
+
+MARKET: ${marketCtx}
+${countryCtx}
+LOCATION: ${p.name} is based in ${sessionCity||p.city}.
+COMMUNITY CONTEXT:
+${bgCtx}
+${tierCtx?'RELATIONSHIP TIER: '+tierCtx:''}
+MOOD TODAY: ${moodCtx}${rfCtx}
+AGENT GOAL: ${goalCtx}
+FORMAT: ${channelCtx}
+
+PERFORMANCE RULES:
+1. Draw on this person's actual life — their job, family, financial situation — when you respond. Make it feel like a real conversation with a real person, not a generic prospect.
+2. Your natural objection is "${p.naturalObjection||"I'm too busy"}" — raise it when it fits naturally, not immediately.
+3. Cold mood: raise your objection and mean it. Make the agent work to handle it properly.
+4. Relaxed mood: you're open, but the ask still needs to feel genuine before you say yes.
+5. React to what ${agentName} actually says. Warmth and 'nothing is for sale' framing opens you up. Pitch language closes you down.
+6. The 4F Solution overview is a 45-minute educational meeting. Nothing is for sale. If framed that way genuinely, you're likely to say yes.
+7. Never break character or acknowledge being an AI.
+${cfg.useRF?'8. React to how '+agentName+' handles the Rapidfunnel — natural acknowledgment opens you up, ignoring it or pitching through it puts your guard up.':''}
+
+After your in-character response append:
+---COACH---
+{${skills.map(s=>`"${s.key}":0-100`).join(',')},"feedback":"1-2 sentence specific coaching referencing this persona's triggers and what landed or didn't","tags":["tag1","tag2"]}
+---END---
+Valid tags: ${validTags}
+
+The COACH block is only for the trainer — never reference it in your response.`;
+}
+
+function getSkillDefs(){
+  const base=[
+    {key:'warm',label:'Warmth & rapport',tags:['felt_natural','respected_relationship','used_name','good_reconnect','built_comfort']},
+    {key:'curious',label:'Curiosity created',tags:['created_curiosity','good_curiosity_hook','nothing_for_sale_mentioned']},
+    {key:'pressure',label:'No pressure',tags:['no_pressure','education_framing','values_first']},
+    {key:'ask',label:'Clear 4F ask',tags:['good_ask','booked_4F_overview','booked_overview']},
+  ];
+  if(cfg.market==='natural') base.unshift({key:'rel',label:'Relationship respect',tags:['too_scripted','felt_like_pitch','rushed_to_business','handled_objection','missed_objection']});
+  if(cfg.useRF) base.splice(2,0,{key:'rf',label:'Rapidfunnel handling',tags:['natural_rf_reference','skipped_rf_reference','thanked_for_watching','over_explained_rf']});
+  if(cfg.channel==='sms') base.push({key:'brief',label:'Brevity',tags:['brief','too_long','over_explained']});
+  if(cfg.channel==='email') base.push({key:'hook',label:'Subject / opening hook',tags:['good_subject','weak_subject','good_opening_hook']});
+  return base;
+}
+
+function P(){
+  const base=getPersonas().find(x=>x.id===cfg.persona)||getPersonas()[0];
+  const customName=agentPersonaNames[base.id];
+  if(customName && customName.trim()) return {...base, name:customName.trim(), initial:customName.trim()[0].toUpperCase()};
+  return base;
+}
+
+// ── START SESSION ──
+function startSession(){
+  agentName=document.getElementById('inp-name').value.trim()||'Ryan';
+  agentCompany=document.getElementById('inp-company').value.trim()||'Experior Financial';
+  // Assign random city from background+country pool for this session
+  cfg._sessionCity=getRandomCity(cfg.background,cfg.country);
+  sessionHistory=[]; sessionScores={}; sessionTurn=0; sessionProcessing=false;
+  getSkillDefs().forEach(s=>{sessionScores[s.key]=0;});
+
+  const p=P();
+  // Left panel
+  document.getElementById('ctx-av').textContent=p.initial;
+  document.getElementById('ctx-av').style.background=p.color;
+  document.getElementById('ctx-name').textContent=p.name;
+  document.getElementById('ctx-sub').textContent=p.rel+(p.city?' · '+p.city:'');
+  const tags=[];
+  tags.push(`<span class="ctx-tag" style="background:${cfg.market==='natural'?'var(--green-dim)':'var(--blue-dim)'};color:${cfg.market==='natural'?'var(--green)':'var(--blue)'}">${cfg.market==='natural'?'Natural':'Possibility'}</span>`);
+  tags.push(`<span class="ctx-tag" style="background:var(--s3);color:var(--text2)">${{phone:'📞 Phone',sms:'💬 SMS',email:'📧 Email'}[cfg.channel]}</span>`);
+  if(cfg.useRF) tags.push(`<span class="ctx-tag" style="background:var(--purple-dim);color:var(--purple)">⚡ Rapidfunnel</span>`);
+  tags.push(`<span class="ctx-tag" style="background:var(--s3);color:var(--text2)">${{warm:'😌 Relaxed',neutral:'😐 Typical',cold:'😤 Stressed'}[cfg.mood]}</span>`);
+  document.getElementById('ctx-tags').innerHTML=tags.join('');
+
+  const gc=document.getElementById('goal-card');
+  gc.className='goal-card '+(cfg.useRF?'rf':cfg.market);
+  document.getElementById('goal-lbl').textContent=cfg.useRF?'Rapidfunnel Goal':'Your Goal';
+  document.getElementById('goal-body').textContent=cfg.useRF
+    ?RF_ENTRIES[cfg.rfEntry].title+' — work toward booking the 4F Solution overview. Nothing is for sale.'
+    :'Book a 45-minute complimentary 4F Solution educational overview. Nothing is for sale.';
+
+  const rfCtxEl=document.getElementById('rf-ctx');
+  if(cfg.useRF){
+    rfCtxEl.style.display='block';
+    document.getElementById('rf-ctx-body').textContent=RF_ENTRIES[cfg.rfEntry].ctx.replace(/\$\{name\}/g,p.name);
+  } else rfCtxEl.style.display='none';
+
+  buildSkillBars();
+  document.getElementById('fb-log').innerHTML='<div style="font-size:0.7rem;color:var(--text3);text-align:center;padding:5px">Feedback after each exchange</div>';
+  document.getElementById('score-num').textContent='—';
+  document.getElementById('score-num').style.color='var(--gold)';
+
+  document.getElementById('jright').textContent=agentName+' · '+p.name;
+  setJStep('session');
+  setScreen('session');
+
+  // Show correct channel area
+  document.getElementById('voice-area').style.display=cfg.channel==='phone'?'flex':'none';
+  document.getElementById('sms-area').style.display=cfg.channel==='sms'?'flex':'none';
+  document.getElementById('email-area').style.display=cfg.channel==='email'?'flex':'none';
+
+  if(cfg.channel==='phone') initVoice();
+  else if(cfg.channel==='sms') initSms();
+  else if(cfg.channel==='email') initEmail();
+}
+
+// ── VOICE ──
+function initVoice(){
+  document.getElementById('vc-av').textContent=P().initial;
+  document.getElementById('vc-av').style.background=P().color;
+  document.getElementById('vc-name').textContent=P().name;
+  document.getElementById('vc-sub').textContent=P().rel+(cfg.useRF?' · Rapidfunnel':'');
+  document.getElementById('vc-trans').innerHTML='';
+  callSeconds=0;updateTimer();
+  timerInterval=setInterval(()=>{callSeconds++;updateTimer();},1000);
+  setupRecognition();
+  getOpening();
+}
+
+async function getOpening(){
+  showProc('Connecting...');
+  const opener=cfg.useRF&&cfg.rfEntry==='questions'
+    ?`You have a question about the Rapidfunnel ${agentName} sent you. Give a brief natural opening — "Hey ${agentName}, I got that thing you sent..." then ask your main question. 1-2 sentences.`
+    :`${agentName} is calling you. Give a brief natural greeting — 1-2 sentences.`;
+  try{
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:120,system:buildSystem(),messages:[{role:'user',content:opener}]})});
+    const d=await r.json(); hideProc();
+    const full=d.content?.[0]?.text||'';
+    const txt=extractChar(full);
+    sessionHistory.push({role:'user',content:opener});
+    sessionHistory.push({role:'assistant',content:full});
+    addLine('prospect',txt); speak(txt);
+  }catch(e){hideProc();addLine('sys','Connection error — try again');}
+}
+
+async function handleSpeech(txt){
+  if(!txt||sessionProcessing)return;
+  sessionProcessing=true;
+  document.getElementById('vc-live').textContent=txt;
+  document.getElementById('vc-live').classList.remove('listening');
+  addLine('agent',txt);
+  sessionHistory.push({role:'user',content:txt});
+  showProc('Responding...');
+  try{
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:buildSystem(),messages:sessionHistory})});
+    const d=await r.json(); hideProc();
+    const full=d.content?.[0]?.text||'';
+    const txt2=extractChar(full); const cd=extractCoach(full);
+    sessionHistory.push({role:'assistant',content:full});
+    addLine('prospect',txt2); speak(txt2);
+    if(cd){applyScores(cd);addFb(cd);}
+    sessionTurn++;
+  }catch(e){hideProc();addLine('sys','Error — try again.');}
+  sessionProcessing=false;
+  document.getElementById('vc-live').textContent='Press and hold mic to speak...';
+}
+
+function addLine(type,text){
+  const t=document.getElementById('vc-trans');
+  const d=document.createElement('div');d.className='tl '+type;
+  if(type!=='sys'){const s=document.createElement('div');s.className='tl-spk '+(type==='agent'?'a':'p');s.textContent=type==='agent'?agentName:P().name;d.appendChild(s);}
+  const p=document.createElement('p');p.style.margin='0';p.textContent=text;d.appendChild(p);
+  t.appendChild(d);t.scrollTop=t.scrollHeight;
+}
+function speak(text){if(!synth)return;synth.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-CA';u.rate=0.95;synth.speak(u);}
+function showProc(t){const el=document.getElementById('vc-proc');el.classList.add('on');document.getElementById('proc-txt').textContent=t;}
+function hideProc(){document.getElementById('vc-proc').classList.remove('on');}
+function updateTimer(){const m=Math.floor(callSeconds/60),s=(callSeconds%60).toString().padStart(2,'0');document.getElementById('vc-timer').textContent=`${m}:${s}`;}
+
+function setupRecognition(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
+    const fb=document.getElementById('vc-fallback');fb.classList.add('on');
+    document.getElementById('mic-btn').style.display='none';
+    document.getElementById('vc-live').textContent='Voice unavailable — type below';
+    return;
+  }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition=new SR();recognition.continuous=false;recognition.interimResults=true;recognition.lang='en-CA';
+  recognition.onstart=()=>{listening=true;document.getElementById('mic-btn').classList.add('rec');document.getElementById('vc-live').textContent='Listening...';document.getElementById('vc-live').classList.add('listening');};
+  recognition.onresult=(e)=>{let f='',i='';for(let x=e.resultIndex;x<e.results.length;x++){if(e.results[x].isFinal)f+=e.results[x][0].transcript;else i+=e.results[x][0].transcript;}document.getElementById('vc-live').textContent=f||i||'Listening...';if(f)recognition._final=(recognition._final||'')+f;};
+  recognition.onerror=()=>stopListen();
+  recognition.onend=()=>{listening=false;document.getElementById('mic-btn').classList.remove('rec');const txt=(recognition._final||'').trim();recognition._final='';if(txt&&!sessionProcessing)handleSpeech(txt);else{document.getElementById('vc-live').textContent='Press and hold mic to speak...';document.getElementById('vc-live').classList.remove('listening');}};
+}
+function startListen(e){if(e)e.preventDefault();if(!recognition||sessionProcessing)return;if(synth.speaking)synth.cancel();recognition._final='';try{recognition.start();}catch(err){}}
+function stopListen(){if(!listening)return;try{recognition.stop();}catch(err){}}
+function toggleMute(){muted=!muted;const b=document.getElementById('mute-btn');b.textContent=muted?'🔇':'🎤';b.classList.toggle('muted',muted);}
+function sendFallback(){const ta=document.getElementById('fallback-ta');const txt=ta.value.trim();if(!txt)return;ta.value='';handleSpeech(txt);}
+
+// ── SMS ──
+function initSms(){
+  const p=P();
+  document.getElementById('sms-hdr-av').textContent=p.initial;
+  document.getElementById('sms-hdr-av').style.background=p.color;
+  document.getElementById('sms-hdr-name').textContent=p.name;
+  document.getElementById('sms-hdr-sub').textContent=p.rel;
+  document.getElementById('sms-banner').textContent=`${cfg.market==='natural'?'Natural':'Possibility'} Market${cfg.useRF?' · Rapidfunnel':''} · SMS`;
+  document.getElementById('ph-thread').innerHTML='';
+  updateSmsTime();
+  addSmsDate('Today');
+  addSmsSys('Session started — write your opening message');
+  document.getElementById('ph-ta').disabled=false;
+  document.getElementById('ph-send').disabled=false;
+  document.getElementById('ph-ta').focus();
+}
+
+async function sendSms(){
+  const ta=document.getElementById('ph-ta');
+  const txt=ta.value.trim();if(!txt||sessionProcessing)return;
+  sessionProcessing=true;ta.value='';handleSmsInput(ta);
+  document.getElementById('ph-send').disabled=true;
+  const chars=txt.length;
+  addSmsBubble('sent',txt,chars>160?`⚠ ${chars} chars`:'Delivered');
+  sessionHistory.push({role:'user',content:txt});
+  const typEl=addSmsTyping();
+  await new Promise(r=>setTimeout(r,700+Math.random()*1000));
+  try{
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:buildSystem(),messages:sessionHistory})});
+    const d=await r.json();typEl.remove();
+    const full=d.content?.[0]?.text||'';
+    const txt2=extractChar(full);const cd=extractCoach(full);
+    const noReply=txt2.toLowerCase().startsWith('[no reply]');
+    if(noReply){addSmsSys(P().name.split(' ')[0]+' didn\'t respond to that');}
+    else{
+      sessionHistory.push({role:'assistant',content:full});
+      addSmsBubble('recv',txt2,null);
+      const receipts=document.querySelectorAll('#ph-thread .rcpt');
+      if(receipts.length){receipts[receipts.length-1].className='rcpt read';receipts[receipts.length-1].textContent='Read';}
+    }
+    if(cd){const brief=chars<=160?100:chars<=320?55:20;cd.brief=brief;applyScores(cd);addFb(cd);}
+    sessionTurn++;
+  }catch(e){typEl.remove();addSmsSys('Connection error — try again.');}
+  sessionProcessing=false;
+  document.getElementById('ph-send').disabled=false;
+  document.getElementById('ph-ta').focus();
+}
+
+function addSmsBubble(type,text,receipt){
+  const t=document.getElementById('ph-thread');
+  const w=document.createElement('div');w.className='mw '+type;
+  w.innerHTML=`<div class="bbl ${type}">${text.replace(/\n/g,'<br>')}</div>${receipt?`<div class="rcpt">${receipt}</div>`:''}`;
+  t.appendChild(w);t.scrollTop=t.scrollHeight;
+}
+function addSmsSys(text){const t=document.getElementById('ph-thread');const w=document.createElement('div');w.className='mw';w.innerHTML=`<div class="bbl sys">${text}</div>`;t.appendChild(w);t.scrollTop=t.scrollHeight;}
+function addSmsDate(text){const t=document.getElementById('ph-thread');const el=document.createElement('div');el.className='date-sep';el.textContent=text;t.appendChild(el);}
+function addSmsTyping(){const t=document.getElementById('ph-thread');const w=document.createElement('div');w.className='mw recv';w.innerHTML='<div class="typing-bub"><div class="td"></div><div class="td"></div><div class="td"></div></div>';t.appendChild(w);t.scrollTop=t.scrollHeight;return w;}
+function handleSmsInput(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,68)+'px';const len=el.value.length,rem=160-len;const cl=document.getElementById('ch-ct');cl.textContent=rem>=0?rem:'+'+Math.abs(rem);cl.className='ch-ct'+(len>160?' over':len>130?' warn':'');}
+function handleSmsKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendSms();}}
+function updateSmsTime(){const n=new Date(),h=n.getHours()%12||12,m=n.getMinutes().toString().padStart(2,'0');document.getElementById('sms-time').textContent=`${h}:${m}`;}
+
+// ── EMAIL ──
+function initEmail(){
+  const p=P();
+  document.getElementById('email-to').textContent=p.name.toLowerCase().split(' ')[0]+'@email.com';
+  document.getElementById('email-subject').value='';
+  document.getElementById('email-body').value='';
+  document.getElementById('subject-score').classList.remove('on');
+  document.getElementById('email-thread-area').style.display='none';
+  document.getElementById('email-thread-area').innerHTML='';
+  document.getElementById('word-count').textContent='0 words';
+  document.getElementById('email-send-btn').disabled=false;
+  document.getElementById('email-body').style.display='block';
+  document.getElementById('email-body').focus();
+}
+
+function scoreSubject(val){
+  const el=document.getElementById('subject-score');
+  if(!val){el.classList.remove('on');return;}
+  const len=val.length;
+  const hasQuestion=val.includes('?');
+  const hasPersonal=/you|your/i.test(val);
+  const tooSalesy=/free|discount|offer|buy|sale|deal/i.test(val);
+  let score='';
+  if(tooSalesy) score='⚠ Sounds promotional — likely to be ignored';
+  else if(len<20) score='Subject is very short — add more context';
+  else if(len>60) score='Subject is long — trim for mobile preview';
+  else if(hasQuestion||hasPersonal) score='✓ Good — creates curiosity and feels personal';
+  else score='Neutral — try adding a question or personal reference';
+  el.textContent=score;el.classList.add('on');
+}
+
+function updateWordCount(val){
+  const words=val.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('word-count').textContent=words+' words'+(words>200?' — consider trimming':'');
+}
+
+async function sendEmail(){
+  const subject=document.getElementById('email-subject').value.trim();
+  const body=document.getElementById('email-body').value.trim();
+  if(!subject||!body||sessionProcessing)return;
+  sessionProcessing=true;
+  document.getElementById('email-send-btn').disabled=true;
+  // Show sent email
+  const threadArea=document.getElementById('email-thread-area');
+  threadArea.style.display='flex';
+  const sentDiv=document.createElement('div');
+  sentDiv.style.cssText='padding:12px;background:var(--blue-dim);border:1px solid rgba(72,136,240,0.15);border-radius:9px;';
+  sentDiv.innerHTML=`<div style="font-size:0.62rem;font-weight:700;color:var(--blue);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase">You — ${agentName}</div><div style="font-size:0.8rem;color:var(--text2);font-weight:600;margin-bottom:4px">Subject: ${subject}</div><div style="font-size:0.8rem;color:var(--text2);white-space:pre-wrap;line-height:1.6">${body}</div>`;
+  threadArea.appendChild(sentDiv);
+  document.getElementById('email-body').style.display='none';
+  const prompt=`${agentName} just sent you an email with subject line "${subject}" and body: "${body}". Reply naturally as ${P().name}. React to the quality — reply if it's good, or write a polite brush-off if it feels generic or salesy.`;
+  sessionHistory.push({role:'user',content:prompt});
+  try{
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:380,system:buildSystem(),messages:sessionHistory})});
+    const d=await r.json();
+    const full=d.content?.[0]?.text||'';
+    const txt=extractChar(full);const cd=extractCoach(full);
+    sessionHistory.push({role:'assistant',content:full});
+    const replyDiv=document.createElement('div');
+    replyDiv.style.cssText='padding:12px;background:var(--s2);border:1px solid var(--border2);border-radius:9px;';
+    replyDiv.innerHTML=`<div style="font-size:0.62rem;font-weight:700;color:var(--gold);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase">${P().name}</div><div style="font-size:0.8rem;color:var(--text2);white-space:pre-wrap;line-height:1.6">${txt}</div>`;
+    threadArea.appendChild(replyDiv);
+    threadArea.scrollTop=threadArea.scrollHeight;
+    // Allow reply
+    const replyBody=document.getElementById('email-body');
+    replyBody.style.display='block';replyBody.value='';replyBody.placeholder='Write your reply...';
+    document.getElementById('email-send-btn').disabled=false;
+    document.getElementById('email-send-btn').textContent='Send Reply';
+    if(cd){applyScores(cd);addFb(cd);}
+    sessionTurn++;
+  }catch(e){document.getElementById('email-send-btn').disabled=false;}
+  sessionProcessing=false;
+}
+
+// ── SCORING ──
+function buildSkillBars(){
+  const skills=getSkillDefs();
+  document.getElementById('skill-bars').innerHTML=skills.map(s=>`
+    <div class="skill-row">
+      <div class="sk-top"><span class="sk-nm">${s.label}</span><span class="sk-vl" id="sv-${s.key}">—</span></div>
+      <div class="sk-track"><div class="sk-fill" id="sf-${s.key}" style="width:0%"></div></div>
+    </div>`).join('');
+}
+
+function applyScores(d){
+  const skills=getSkillDefs();
+  skills.forEach(s=>{
+    if(d[s.key]!=null){
+      sessionScores[s.key]=sessionTurn===0?d[s.key]:Math.round(sessionScores[s.key]*0.5+d[s.key]*0.5);
+      const pct=sessionScores[s.key];
+      const color=pct>=70?'#28c97a':pct>=45?'#e09030':'#e84848';
+      const sv=document.getElementById('sv-'+s.key);
+      const sf=document.getElementById('sf-'+s.key);
+      if(sv)sv.textContent=pct+'%';
+      if(sf){sf.style.width=pct+'%';sf.style.background=color;}
+    }
+  });
+  const vals=Object.values(sessionScores).filter(v=>v>0);
+  if(vals.length){
+    const avg=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+    const el=document.getElementById('score-num');
+    el.textContent=avg;
+    el.style.color=avg>=70?'#28c97a':avg>=45?'#c8a84a':'#e84848';
+  }
+}
+
+function addFb(d){
+  const log=document.getElementById('fb-log');
+  const ph=log.querySelector('div[style]');if(ph)ph.remove();
+  const goodTags=['felt_natural','respected_relationship','created_curiosity','no_pressure','good_ask','values_first','education_framing','nothing_for_sale_mentioned','handled_objection','used_name','good_reconnect','natural_rf_reference','thanked_for_watching','booked_4F_overview','booked_overview','good_subject','good_opening_hook','brief'];
+  const badTags=['too_scripted','felt_like_pitch','rushed_to_business','missed_objection','used_advisor_not_professional','skipped_rf_reference','over_explained_rf','over_explained','too_long','weak_subject'];
+  const tags=(d.tags||[]).map(t=>`<span class="tag ${goodTags.includes(t)?'g':badTags.includes(t)?'b':'w'}">${t.replace(/_/g,' ')}</span>`).join('');
+  const item=document.createElement('div');item.className='fb-item';
+  item.innerHTML=`<div class="fb-turn">Exchange ${sessionTurn+1}</div><div>${d.feedback||''}</div>${tags?`<div class="tag-row">${tags}</div>`:''}`;
+  log.insertBefore(item,log.firstChild);
+}
+
+// ── SUMMARY ──
+function showSummary(){
+  if(timerInterval)clearInterval(timerInterval);
+  if(synth)synth.cancel();
+  const vals=Object.values(sessionScores).filter(v=>v>0);
+  const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;
+  const p=P();
+  const skills=getSkillDefs();
+  setScreen('summary');setJStep('summary');
+  const ss=document.getElementById('summary');
+  const pills=skills.map(s=>{
+    const v=sessionScores[s.key];
+    const c=v>=70?'#28c97a':v>=45?'#c8a84a':'#e84848';
+    return `<div style="text-align:center;background:var(--s1);border:1px solid var(--border2);border-radius:9px;padding:10px 12px;min-width:80px"><div style="font-size:1.1rem;font-weight:800;font-family:'Syne',sans-serif;color:${c}">${v||'—'}%</div><div style="font-size:0.62rem;color:var(--text2);margin-top:2px">${s.label}</div></div>`;
+  }).join('');
+  const modeLabel={phone:'📞 Phone call',sms:'💬 SMS',email:'📧 Email'}[cfg.channel];
+  const rfLabel=cfg.useRF?` · ⚡ ${RF_ENTRIES[cfg.rfEntry].title}`:'';
+  ss.innerHTML=`
+    <div style="font-family:'Syne',sans-serif;font-size:0.62rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3)">Session Complete</div>
+    <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--text);text-align:center">${p.name} · ${cfg.market==='natural'?'Natural':'Possibility'} Market</div>
+    <div style="font-size:0.74rem;color:var(--text2)">${modeLabel}${rfLabel}</div>
+    <div style="font-family:'Syne',sans-serif;font-size:3.2rem;font-weight:800;color:${avg>=70?'#28c97a':avg>=45?'#c8a84a':'#e84848'}">${avg||'—'}<span style="font-size:1.2rem;color:var(--text2)">%</span></div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:center;max-width:520px">${pills}</div>
+    <div style="display:flex;gap:9px;margin-top:6px;flex-wrap:wrap;justify-content:center">
+      <button onclick="location.reload()" style="padding:11px 22px;background:var(--green);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">New Session</button>
+      <button onclick="backToSetup()" style="padding:11px 18px;background:var(--s1);border:1px solid var(--border2);color:var(--text2);border-radius:9px;font-family:'Instrument Sans',sans-serif;font-size:.82rem;cursor:pointer">Change Setup</button>
+    </div>`;
+  postToZapier(avg,p);
+}
+
+function backToSetup(){setScreen('setup');setJStep('setup');}
+
+function postToZapier(avg,p){
+  const agent=window._sd||{};
+  const tags=Object.entries(sessionScores).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a).slice(0,3).map(([k])=>k).join(', ');
+  try{fetch('https://hooks.zapier.com/hooks/catch/236545/unc6gn1/',{method:'POST',mode:'no-cors',body:new URLSearchParams({
+    agent_name:agent.name||agentName,agent_email:agent.email||'',agent_company:agent.company||agentCompany,
+    session_type:cfg.channel,market:cfg.market,rapidfunnel:cfg.useRF?'yes':'no',
+    rf_entry:cfg.rfEntry||'',outcome:'Session completed',score:avg||'',persona:p.name,tier:cfg.tier,
+    difficulty:cfg.mood,top_skills:tags,source:'ProspectAI Unified Trainer',
+    timestamp:new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})
+  })});}catch(e){}
+}
+
+// ── UTILS ──
+function setScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function setJStep(step){
+  const steps=['setup','session','summary'];
+  steps.forEach((s,i)=>{
+    const el=document.getElementById('js-'+s);if(!el)return;
+    const idx=steps.indexOf(step);
+    if(i<idx)el.className='jstep done';
+    else if(i===idx)el.className='jstep active';
+    else el.className='jstep pending';
+  });
+}
+function extractChar(f){const i=f.indexOf('---COACH---');return(i>-1?f.substring(0,i):f).trim();}
+function extractCoach(f){try{const m=f.match(/---COACH---\s*([\s\S]*?)\s*---END---/);return m?JSON.parse(m[1].trim()):null;}catch{return null;}}
+</script>
+</body>
+</html>
