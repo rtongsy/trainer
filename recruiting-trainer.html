@@ -385,6 +385,18 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 </style>
 </head>
 <body>
+<script>
+  // ── ACCESS PROTECTION ──
+  const _pw = 'step2connect';
+  if(sessionStorage.getItem('_auth') !== _pw){
+    const _input = prompt('Enter access code:');
+    if(_input !== _pw){
+      document.body.innerHTML = '<div style="font-family:sans-serif;text-align:center;padding:80px 20px;color:#333"><h2>Access denied</h2><p style="color:#888;margin-top:8px">Contact your team leader for the access code.</p></div>';
+    } else {
+      sessionStorage.setItem('_auth', _pw);
+    }
+  }
+</script>
 
 <div class="topbar">
   <div class="topbar-logo">Prospect<em>AI</em></div>
