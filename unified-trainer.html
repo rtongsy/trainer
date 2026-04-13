@@ -888,7 +888,7 @@ const RF_ENTRIES={
 // ── STATE ──
 let cfg={market:null,channel:null,tier:'close',useRF:null,rfEntry:null,persona:'mike',mood:'neutral',country:'ca'};
 let agentName='',agentCompany='';
-let sessionHistory=[],sessionScores={},sessionTurn=0,sessionProcessing=false;
+let sessionHistory=[],sessionScores={},sessionFeedback=[],sessionTurn=0,sessionProcessing=false;
 let recognition=null,listening=false,muted=false,timerInterval=null,callSeconds=0;
 const synth=window.speechSynthesis;
 
@@ -1171,7 +1171,7 @@ function P(){
 function startSession(){
   agentName=document.getElementById('inp-name').value.trim()||'Ryan';
   agentCompany=document.getElementById('inp-company').value.trim()||'Experior Financial';
-  sessionHistory=[]; sessionScores={}; sessionTurn=0; sessionProcessing=false;
+  sessionHistory=[]; sessionScores={}; sessionFeedback=[]; sessionTurn=0; sessionProcessing=false;
   getSkillDefs().forEach(s=>{sessionScores[s.key]=0;});
 
   const p=P();
@@ -1510,6 +1510,7 @@ function addFb(d){
   const item=document.createElement('div');item.className='fb-item';
   item.innerHTML=`<div class="fb-turn">Exchange ${sessionTurn+1}</div><div>${d.feedback||''}</div>${tags?`<div class="tag-row">${tags}</div>`:''}`;
   log.insertBefore(item,log.firstChild);
+  sessionFeedback.unshift({turn:sessionTurn+1,feedback:d.feedback||d.feedback||'',tags:d.tags||[]});
 }
 
 // ── SUMMARY ──
@@ -1539,11 +1540,74 @@ function showSummary(){
     <div style="display:flex;gap:9px;margin-top:6px;flex-wrap:wrap;justify-content:center">
       <button onclick="location.reload()" style="padding:11px 22px;background:var(--green);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">New Session</button>
       <button onclick="backToSetup()" style="padding:11px 18px;background:var(--s1);border:1px solid var(--border2);color:var(--text2);border-radius:9px;font-family:'Instrument Sans',sans-serif;font-size:.82rem;cursor:pointer">Change Setup</button>
+      <button onclick="downloadSummary(avg,p)" style="padding:11px 18px;background:var(--gold);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">⬇ Download Summary</button>
     </div>`;
   postToZapier(avg,p);
 }
 
 function backToSetup(){setScreen('setup');setJStep('setup');}
+
+function downloadSummary(avg,p){
+  const skills=typeof getSkillDefs==='function'?getSkillDefs():SKILLS;
+  const date=new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'});
+  const time=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'});
+  const ch={phone:'Phone call',sms:'SMS',email:'Email',linkedin:'LinkedIn'}[cfg.channel]||cfg.channel;
+  const sc=avg>=70?'#1a7a45':avg>=45?'#b8720a':'#cc3333';
+  const skillRows=skills.map(s=>{
+    const v=sessionScores[s.key]||0;
+    const c=v>=70?'#1a7a45':v>=45?'#b8720a':'#cc3333';
+    return '<tr><td style="padding:7px 10px;font-size:13px;color:#444">'+s.label+'</td>'
+      +'<td style="padding:7px 10px"><div style="background:#eee;border-radius:4px;height:8px;width:140px">'
+      +'<div style="background:'+c+';height:8px;border-radius:4px;width:'+Math.round(v*1.4)+'px"></div></div></td>'
+      +'<td style="padding:7px 10px;font-size:13px;font-weight:700;color:'+c+';text-align:right">'+(v||'—')+'%</td></tr>';
+  }).join('');
+  const good=['felt_natural','respected_relationship','created_curiosity','no_pressure','good_ask','values_first','education_framing','nothing_for_sale_mentioned','handled_objection','used_name','good_reconnect','natural_rf_reference','thanked_for_watching','booked_4F_overview','booked_overview','good_subject','good_opening_hook','brief','treated_as_peer','planted_right_question','no_pitch','handled_with_curiosity','left_door_open'];
+  const bad=['too_scripted','felt_like_pitch','rushed_to_business','missed_objection','skipped_rf_reference','over_explained','too_long','weak_subject','pitched_instead','led_with_compensation','argued_instead','burned_the_bridge'];
+  const fbRows=sessionFeedback.map(f=>{
+    const tgs=(f.tags||[]).map(t=>{
+      const c=good.includes(t)?'#1a7a45':bad.includes(t)?'#cc3333':'#b8720a';
+      const bg=good.includes(t)?'#eaf5ef':bad.includes(t)?'#faeaea':'#fef6e6';
+      return '<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+bg+';color:'+c+';margin:2px">'+t.replace(/_/g,' ')+'</span>';
+    }).join('');
+    return '<tr style="border-top:1px solid #eee"><td style="padding:10px;font-size:12px;color:#888;white-space:nowrap;vertical-align:top">Exchange '+f.turn+'</td>'
+      +'<td style="padding:10px"><div style="font-size:13px;color:#333;margin-bottom:5px">'+f.feedback+'</div>'+tgs+'</td></tr>';
+  }).join('');
+  const rfTxt=cfg.useRF&&cfg.rfEntry?(' &middot; Rapidfunnel: '+(typeof RF_ENTRIES!=='undefined'?RF_ENTRIES:RF_ENTRIES_RECRUIT)?.[cfg.rfEntry]?.title||''):'';
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ProspectAI '+p.name+' '+date+'</title>'
+    +'<style>body{font-family:Helvetica Neue,Arial,sans-serif;background:#f5f2ed;margin:0;padding:24px}'
+    +'.card{background:#fff;border-radius:12px;max-width:680px;margin:0 auto;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}'
+    +'.hdr{background:#1a2440;padding:22px 28px;display:flex;justify-content:space-between;align-items:center}'
+    +'.logo{font-size:18px;font-weight:800;color:#fff}.logo em{color:#e8940a;font-style:normal}'
+    +'.hdr-r{text-align:right;font-size:12px;color:rgba(255,255,255,.5)}'
+    +'.body{padding:24px 28px}'
+    +'.title{font-size:20px;font-weight:700;color:#1e1a14;margin-bottom:3px}'
+    +'.meta{font-size:13px;color:#888;margin-bottom:18px}'
+    +'.hero{text-align:center;padding:20px;background:#f9f6f1;border-radius:10px;margin-bottom:20px}'
+    +'.snum{font-size:52px;font-weight:800;color:'+sc+';line-height:1}'
+    +'.slbl{font-size:11px;color:#bbb;text-transform:uppercase;letter-spacing:.1em;margin-top:4px}'
+    +'h3{font-size:12px;font-weight:700;color:#1a2440;text-transform:uppercase;letter-spacing:.1em;border-bottom:2px solid #e8940a;padding-bottom:5px;margin:20px 0 8px}'
+    +'table{width:100%;border-collapse:collapse}'
+    +'.ftr{background:#f0ece6;padding:12px 28px;font-size:11px;color:#bbb;text-align:center}'
+    +'@media print{body{background:#fff;padding:0}.card{box-shadow:none;max-width:100%}}'
+    +'</style></head><body>'
+    +'<div class="card"><div class="hdr"><div class="logo">Prospect<em>AI</em></div>'
+    +'<div class="hdr-r">'+date+' &middot; '+time+'<br>'+( agentName||'Agent')+'</div></div>'
+    +'<div class="body">'
+    +'<div class="title">'+p.name+' &middot; '+p.rel+'</div>'
+    +'<div class="meta">'+ch+' &middot; '+(cfg.market==='natural'?'Natural Market':'Possibility Market')+' &middot; '+cfg.mood+' mood'+rfTxt+'</div>'
+    +'<div class="hero"><div class="snum">'+(avg||'&mdash;')+'<span style="font-size:22px;color:#ccc">%</span></div><div class="slbl">Overall Score</div></div>'
+    +'<h3>Skill Scores</h3><table>'+skillRows+'</table>'
+    +(fbRows?'<h3>Coach Feedback</h3><table>'+fbRows+'</table>':'')
+    +'</div><div class="ftr">ProspectAI &middot; Powered by the 4F Solution &middot; Experior Financial</div></div>'
+    +'</body></html>';
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='ProspectAI-'+p.name.replace(/\s+/g,'-')+'-'+new Date().toISOString().slice(0,10)+'.html';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function postToZapier(avg,p){
   const agent=window._sd||{};
