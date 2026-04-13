@@ -560,7 +560,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
       <div class="vc-live"><div class="vc-live-txt" id="vc-live">Press and hold mic to speak...</div></div>
       <div class="vc-ctrls">
         <button class="ctrl mute" id="mute-btn" onclick="toggleMute()">🎤</button>
-        <button class="ctrl mic" id="mic-btn" onmousedown="startListen()" onmouseup="stopListen()" ontouchstart="startListen(event)" ontouchend="stopListen()">🎙️</button>
+        <button class="ctrl mic" id="mic-btn" onclick="toggleListen()">🎙️</button>
         <button class="ctrl end" onclick="showSummary()">📵</button>
       </div>
       <div class="vc-fallback" id="vc-fallback">
@@ -892,6 +892,43 @@ let sessionHistory=[],sessionScores={},sessionTurn=0,sessionProcessing=false;
 let recognition=null,listening=false,muted=false,timerInterval=null,callSeconds=0;
 const synth=window.speechSynthesis;
 
+// ── PHONE RING ──
+let _ringInterval=null;
+function startRing(){
+  stopRing();
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  function playRingTone(){
+    // North American double-ring pattern: two short bursts
+    function burst(startTime, duration){
+      const osc1=ctx.createOscillator();
+      const osc2=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
+      osc1.type='sine'; osc1.frequency.value=480;
+      osc2.type='sine'; osc2.frequency.value=440;
+      gain.gain.setValueAtTime(0,startTime);
+      gain.gain.linearRampToValueAtTime(0.18,startTime+0.02);
+      gain.gain.setValueAtTime(0.18,startTime+duration-0.02);
+      gain.gain.linearRampToValueAtTime(0,startTime+duration);
+      osc1.start(startTime); osc1.stop(startTime+duration);
+      osc2.start(startTime); osc2.stop(startTime+duration);
+    }
+    const t=ctx.currentTime;
+    burst(t, 0.4);        // first burst
+    burst(t+0.6, 0.4);    // second burst
+    // silence until 4s then repeat
+  }
+  playRingTone();
+  _ringInterval=setInterval(playRingTone,4000);
+  // update status text
+  const lv=document.getElementById('vc-live');
+  if(lv) lv.textContent='Calling... ringing';
+  showProc('Calling...');
+}
+function stopRing(){
+  if(_ringInterval){clearInterval(_ringInterval);_ringInterval=null;}
+}
+
 // ── SETUP LOGIC ──
 function setCountry(c){
   cfg.country=c;
@@ -1183,6 +1220,27 @@ function startSession(){
 }
 
 // ── VOICE ──
+// ── FETCH WITH RETRY ──
+async function fetchWithRetry(payload, attempts=3, delayMs=2000){
+  for(let i=0;i<attempts;i++){
+    try{
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const d=await r.json();
+      if(d.type==='error'&&d.error?.type==='overloaded_error'&&i<attempts-1){
+        showProc('Server busy — retrying...');
+        await new Promise(res=>setTimeout(res,delayMs*(i+1)));
+        continue;
+      }
+      return d;
+    }catch(e){
+      if(i<attempts-1){
+        showProc('Retrying...');
+        await new Promise(res=>setTimeout(res,delayMs));
+      } else throw e;
+    }
+  }
+}
+
 function initVoice(){
   document.getElementById('vc-av').textContent=P().initial;
   document.getElementById('vc-av').style.background=P().color;
@@ -1192,6 +1250,7 @@ function initVoice(){
   callSeconds=0;updateTimer();
   timerInterval=setInterval(()=>{callSeconds++;updateTimer();},1000);
   setupRecognition();
+  startRing();
   getOpening();
 }
 
@@ -1201,15 +1260,14 @@ async function getOpening(){
     ?`You have a question about the Rapidfunnel ${agentName} sent you. Give a brief natural opening — "Hey ${agentName}, I got that thing you sent..." then ask your main question. 1-2 sentences.`
     :`${agentName} is calling you. Give a brief natural greeting — 1-2 sentences.`;
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:120,system:buildSystem(),messages:[{role:'user',content:opener}]})});
-    const d=await r.json(); hideProc();
+    const d=await fetchWithRetry({model:'claude-sonnet-4-5',max_tokens:120,system:buildSystem(),messages:[{role:'user',content:opener}]});
+     hideProc(); stopRing();
     const full=d.content?.[0]?.text||'';
     const txt=extractChar(full);
     sessionHistory.push({role:'user',content:opener});
     sessionHistory.push({role:'assistant',content:full});
     addLine('prospect',txt); speak(txt);
-  }catch(e){hideProc();addLine('sys','Connection error — try again');}
+  }catch(e){stopRing();hideProc();addLine('sys','Connection error — try again');}
 }
 
 async function handleSpeech(txt){
@@ -1221,9 +1279,8 @@ async function handleSpeech(txt){
   sessionHistory.push({role:'user',content:txt});
   showProc('Responding...');
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:buildSystem(),messages:sessionHistory})});
-    const d=await r.json(); hideProc();
+    const d=await fetchWithRetry({model:'claude-sonnet-4-5',max_tokens:400,system:buildSystem(),messages:sessionHistory});
+     hideProc();
     const full=d.content?.[0]?.text||'';
     const txt2=extractChar(full); const cd=extractCoach(full);
     sessionHistory.push({role:'assistant',content:full});
@@ -1232,7 +1289,7 @@ async function handleSpeech(txt){
     sessionTurn++;
   }catch(e){hideProc();addLine('sys','Error — try again.');}
   sessionProcessing=false;
-  document.getElementById('vc-live').textContent='Press and hold mic to speak...';
+  document.getElementById('vc-live').textContent='Click mic to speak, click again to send';
 }
 
 function addLine(type,text){
@@ -1259,10 +1316,21 @@ function setupRecognition(){
   recognition.onstart=()=>{listening=true;document.getElementById('mic-btn').classList.add('rec');document.getElementById('vc-live').textContent='Listening...';document.getElementById('vc-live').classList.add('listening');};
   recognition.onresult=(e)=>{let f='',i='';for(let x=e.resultIndex;x<e.results.length;x++){if(e.results[x].isFinal)f+=e.results[x][0].transcript;else i+=e.results[x][0].transcript;}document.getElementById('vc-live').textContent=f||i||'Listening...';if(f)recognition._final=(recognition._final||'')+f;};
   recognition.onerror=()=>stopListen();
-  recognition.onend=()=>{listening=false;document.getElementById('mic-btn').classList.remove('rec');const txt=(recognition._final||'').trim();recognition._final='';if(txt&&!sessionProcessing)handleSpeech(txt);else{document.getElementById('vc-live').textContent='Press and hold mic to speak...';document.getElementById('vc-live').classList.remove('listening');}};
+  recognition.onend=()=>{listening=false;document.getElementById('mic-btn').classList.remove('rec');const txt=(recognition._final||'').trim();recognition._final='';if(txt&&!sessionProcessing)handleSpeech(txt);else{document.getElementById('vc-live').textContent='Click mic to speak, click again to send';document.getElementById('vc-live').classList.remove('listening');}};
 }
-function startListen(e){if(e)e.preventDefault();if(!recognition||sessionProcessing)return;if(synth.speaking)synth.cancel();recognition._final='';try{recognition.start();}catch(err){}}
-function stopListen(){if(!listening)return;try{recognition.stop();}catch(err){}}
+function toggleListen(){
+  if(sessionProcessing)return;
+  if(listening){
+    try{recognition.stop();}catch(err){}
+  } else {
+    if(!recognition) return;
+    if(synth.speaking) synth.cancel();
+    recognition._final='';
+    try{recognition.start();}catch(err){}
+  }
+}
+function startListen(e){if(e)e.preventDefault();toggleListen();}
+function stopListen(){}
 function toggleMute(){muted=!muted;const b=document.getElementById('mute-btn');b.textContent=muted?'🔇':'🎤';b.classList.toggle('muted',muted);}
 function sendFallback(){const ta=document.getElementById('fallback-ta');const txt=ta.value.trim();if(!txt)return;ta.value='';handleSpeech(txt);}
 
@@ -1294,9 +1362,8 @@ async function sendSms(){
   const typEl=addSmsTyping();
   await new Promise(r=>setTimeout(r,700+Math.random()*1000));
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:buildSystem(),messages:sessionHistory})});
-    const d=await r.json();typEl.remove();
+    const d=await fetchWithRetry({model:'claude-sonnet-4-5',max_tokens:300,system:buildSystem(),messages:sessionHistory});
+    typEl.remove();
     const full=d.content?.[0]?.text||'';
     const txt2=extractChar(full);const cd=extractCoach(full);
     const noReply=txt2.toLowerCase().startsWith('[no reply]');
@@ -1381,9 +1448,8 @@ async function sendEmail(){
   const prompt=`${agentName} just sent you an email with subject line "${subject}" and body: "${body}". Reply naturally as ${P().name}. React to the quality — reply if it's good, or write a polite brush-off if it feels generic or salesy.`;
   sessionHistory.push({role:'user',content:prompt});
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:380,system:buildSystem(),messages:sessionHistory})});
-    const d=await r.json();
+    const d=await fetchWithRetry({model:'claude-sonnet-4-5',max_tokens:380,system:buildSystem(),messages:sessionHistory});
+    
     const full=d.content?.[0]?.text||'';
     const txt=extractChar(full);const cd=extractCoach(full);
     sessionHistory.push({role:'assistant',content:full});
@@ -1449,6 +1515,7 @@ function addFb(d){
 // ── SUMMARY ──
 function showSummary(){
   if(timerInterval)clearInterval(timerInterval);
+  stopRing();
   if(synth)synth.cancel();
   const vals=Object.values(sessionScores).filter(v=>v>0);
   const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;
