@@ -1430,14 +1430,17 @@ function showSummary(){
     <div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center">
       <button onclick="location.reload()" style="padding:11px 22px;background:var(--gold);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">Try Again</button>
       <button onclick="backToSetup()" style="padding:11px 18px;background:var(--s1);border:1px solid var(--border2);color:var(--text2);border-radius:9px;font-family:'Instrument Sans',sans-serif;font-size:.82rem;cursor:pointer">New Prospect</button>
-      <button onclick="downloadSummary(avg,p)" style="padding:11px 18px;background:var(--gold);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">⬇ Download Summary</button>
+      <button onclick="downloadSummary()" style="padding:11px 18px;background:var(--gold);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">⬇ Download Summary</button>
     </div>`;
   postZapier(avg, p);
 }
 
 function backToSetup(){ setScreen("setup"); setJStep("setup"); }
 
-function downloadSummary(avg,p){
+function downloadSummary(){
+  const p=P();
+  const vals=Object.values(sessionScores).filter(v=>v>0);
+  const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;
   const skills=SKILLS;
   const date=new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'});
   const time=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'});
