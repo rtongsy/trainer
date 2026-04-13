@@ -1142,11 +1142,11 @@ ${cfg.useRF?'8. React to how '+agentName+' handles the Rapidfunnel — natural a
 
 After your in-character response append:
 ---COACH---
-{${skills.map(s=>`"${s.key}":0-100`).join(',')},"feedback":"1-2 sentence specific coaching referencing this persona's triggers and what landed or didn't","tags":["tag1","tag2"]}
+{${skills.map(s=>`"${s.key}":0-100`).join(',')},"feedback":"Direct coaching TO the agent — what they said that worked or didn't, and one concrete suggestion. Use "you" language e.g. "You moved to the ask too fast — next time wait for her to ask a question first." Never describe the prospect's reaction; coach the agent's words and technique.","tags":["tag1","tag2"]}
 ---END---
 Valid tags: ${validTags}
 
-The COACH block is only for the trainer — never reference it in your response.`;
+The COACH block is only for the trainer — never reference it in your response. Speak directly to the agent as their coach using "you" language. Example: "You moved to the ask too fast — next time wait for them to show curiosity first." Never describe the prospect's reaction; only coach the agent's words and technique.`;
 }
 
 function getSkillDefs(){
