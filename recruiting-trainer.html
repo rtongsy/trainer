@@ -638,7 +638,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
       <div class="vc-live"><div class="vc-live-txt" id="vc-live">Press and hold mic to speak...</div></div>
       <div class="vc-ctrls">
         <button class="ctrl mute" id="mute-btn" onclick="toggleMute()">🎤</button>
-        <button class="ctrl mic" id="mic-btn" onmousedown="startListen()" onmouseup="stopListen()" ontouchstart="startListen(event)" ontouchend="stopListen()">🎙️</button>
+        <button class="ctrl mic" id="mic-btn" onclick="toggleListen()">🎙️</button>
         <button class="ctrl end" onclick="showSummary()">📵</button>
       </div>
       <div class="vc-fallback" id="vc-fallback">
@@ -913,9 +913,43 @@ const RF_ENTRIES_RECRUIT = {
 // ── STATE ──
 let cfg = { channel:null, prospect:"sarah", mood:"neutral", country:"ca", useRF:null, rfEntry:null };
 let agentName="", agentYears="";
-let sessionHistory=[], sessionScores={}, sessionTurn=0, sessionProcessing=false;
+let sessionHistory=[], sessionScores={}, sessionFeedback=[], sessionTurn=0, sessionProcessing=false;
 let recognition=null, listening=false, muted=false, timerInterval=null, callSeconds=0;
 const synth = window.speechSynthesis;
+
+// ── PHONE RING ──
+let _ringInterval=null;
+function startRing(){
+  stopRing();
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  function playRingTone(){
+    function burst(startTime, duration){
+      const osc1=ctx.createOscillator();
+      const osc2=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
+      osc1.type='sine'; osc1.frequency.value=480;
+      osc2.type='sine'; osc2.frequency.value=440;
+      gain.gain.setValueAtTime(0,startTime);
+      gain.gain.linearRampToValueAtTime(0.18,startTime+0.02);
+      gain.gain.setValueAtTime(0.18,startTime+duration-0.02);
+      gain.gain.linearRampToValueAtTime(0,startTime+duration);
+      osc1.start(startTime); osc1.stop(startTime+duration);
+      osc2.start(startTime); osc2.stop(startTime+duration);
+    }
+    const t=ctx.currentTime;
+    burst(t, 0.4);
+    burst(t+0.6, 0.4);
+  }
+  playRingTone();
+  _ringInterval=setInterval(playRingTone,4000);
+  const lv=document.getElementById('vc-live');
+  if(lv) lv.textContent='Calling... ringing';
+  showProc('Calling...');
+}
+function stopRing(){
+  if(_ringInterval){clearInterval(_ringInterval);_ringInterval=null;}
+}
 
 function P(){ return getProspects().find(x=>x.id===cfg.prospect)||getProspects()[0]; }
 
@@ -1091,7 +1125,7 @@ Valid tags: treated_as_peer acknowledged_their_work planted_right_question creat
 function startSession(){
   agentName = document.getElementById("inp-name").value.trim()||"Ryan";
   agentYears = document.getElementById("inp-years").value.trim()||"4";
-  sessionHistory=[]; sessionScores={}; sessionTurn=0; sessionProcessing=false;
+  sessionHistory=[]; sessionScores={}; sessionFeedback=[]; sessionTurn=0; sessionProcessing=false;
   SKILLS.forEach(s=>{ sessionScores[s.key]=0; });
 
   const p = P();
@@ -1152,6 +1186,27 @@ function advanceStage(turn){
 }
 
 // ── VOICE ──
+// ── FETCH WITH RETRY ──
+async function fetchWithRetry(payload, attempts=3, delayMs=2000){
+  for(let i=0;i<attempts;i++){
+    try{
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const d=await r.json();
+      if(d.type==='error'&&d.error?.type==='overloaded_error'&&i<attempts-1){
+        showProc('Server busy — retrying...');
+        await new Promise(res=>setTimeout(res,delayMs*(i+1)));
+        continue;
+      }
+      return d;
+    }catch(e){
+      if(i<attempts-1){
+        showProc('Retrying...');
+        await new Promise(res=>setTimeout(res,delayMs));
+      } else throw e;
+    }
+  }
+}
+
 function initVoice(){
   const p=P();
   document.getElementById("vc-av").textContent=p.initial;
@@ -1161,16 +1216,15 @@ function initVoice(){
   document.getElementById("vc-trans").innerHTML="";
   callSeconds=0; updateTimer();
   timerInterval=setInterval(()=>{callSeconds++;updateTimer();},1000);
-  setupRecognition(); getOpening();
+  setupRecognition(); startRing(); getOpening();
 }
 
 async function getOpening(){
   showProc("Connecting...");
   const opener=`${agentName} is calling you — a colleague from the financial industry. Give a brief natural greeting as ${P().name}. 1-2 sentences. You're mildly curious why they're calling.`;
   try{
-    const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:120,system:buildSystem(),messages:[{role:"user",content:opener}]})});
-    const d=await r.json(); hideProc();
+    const d=await fetchWithRetry({model:"claude-sonnet-4-5",max_tokens:120,system:buildSystem(),messages:[{role:"user",content:opener}]});
+     hideProc(); stopRing();
     const full=d.content?.[0]?.text||"";
     const txt=extractChar(full);
     sessionHistory.push({role:"user",content:opener});
@@ -1188,9 +1242,8 @@ async function handleSpeech(txt){
   sessionHistory.push({role:"user",content:txt});
   showProc("Responding...");
   try{
-    const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,system:buildSystem(),messages:sessionHistory})});
-    const d=await r.json(); hideProc();
+    const d=await fetchWithRetry({model:"claude-sonnet-4-5",max_tokens:400,system:buildSystem(),messages:sessionHistory});
+     hideProc();
     const full=d.content?.[0]?.text||"";
     const txt2=extractChar(full); const cd=extractCoach(full);
     sessionHistory.push({role:"assistant",content:full});
@@ -1199,7 +1252,7 @@ async function handleSpeech(txt){
     sessionTurn++; advanceStage(sessionTurn);
   }catch(e){hideProc();addLine("sys","Error — try again.");}
   sessionProcessing=false;
-  document.getElementById("vc-live").textContent="Press and hold mic to speak...";
+  document.getElementById("vc-live").textContent="Click mic to speak, click again to send";
 }
 
 function addLine(type,text){
@@ -1224,10 +1277,21 @@ function setupRecognition(){
   recognition.onstart=()=>{listening=true;document.getElementById("mic-btn").classList.add("rec");document.getElementById("vc-live").textContent="Listening...";document.getElementById("vc-live").classList.add("listening");};
   recognition.onresult=(e)=>{let f="",i="";for(let x=e.resultIndex;x<e.results.length;x++){if(e.results[x].isFinal)f+=e.results[x][0].transcript;else i+=e.results[x][0].transcript;}document.getElementById("vc-live").textContent=f||i||"Listening...";if(f)recognition._final=(recognition._final||"")+f;};
   recognition.onerror=()=>stopListen();
-  recognition.onend=()=>{listening=false;document.getElementById("mic-btn").classList.remove("rec");const txt=(recognition._final||"").trim();recognition._final="";if(txt&&!sessionProcessing)handleSpeech(txt);else{document.getElementById("vc-live").textContent="Press and hold mic to speak...";document.getElementById("vc-live").classList.remove("listening");}};
+  recognition.onend=()=>{listening=false;document.getElementById("mic-btn").classList.remove("rec");const txt=(recognition._final||"").trim();recognition._final="";if(txt&&!sessionProcessing)handleSpeech(txt);else{document.getElementById("vc-live").textContent="Click mic to speak, click again to send";document.getElementById("vc-live").classList.remove("listening");}};
 }
-function startListen(e){if(e)e.preventDefault();if(!recognition||sessionProcessing)return;if(synth.speaking)synth.cancel();recognition._final="";try{recognition.start();}catch(err){}}
-function stopListen(){if(!listening)return;try{recognition.stop();}catch(err){}}
+function toggleListen(){
+  if(sessionProcessing)return;
+  if(listening){
+    try{recognition.stop();}catch(err){}
+  } else {
+    if(!recognition) return;
+    if(synth.speaking) synth.cancel();
+    recognition._final="";
+    try{recognition.start();}catch(err){}
+  }
+}
+function startListen(e){if(e)e.preventDefault();toggleListen();}
+function stopListen(){}
 function toggleMute(){muted=!muted;const b=document.getElementById("mute-btn");b.textContent=muted?"🔇":"🎤";b.classList.toggle("muted",muted);}
 function sendFallback(){const ta=document.getElementById("fallback-ta");const txt=ta.value.trim();if(!txt)return;ta.value="";handleSpeech(txt);}
 
@@ -1258,9 +1322,8 @@ async function sendSms(){
   const typEl=addSmsTyping();
   await new Promise(r=>setTimeout(r,800+Math.random()*1200));
   try{
-    const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,system:buildSystem(),messages:sessionHistory})});
-    const d=await r.json(); typEl.remove();
+    const d=await fetchWithRetry({model:"claude-sonnet-4-5",max_tokens:300,system:buildSystem(),messages:sessionHistory});
+     typEl.remove();
     const full=d.content?.[0]?.text||"";
     const txt2=extractChar(full); const cd=extractCoach(full);
     const noReply=txt2.toLowerCase().startsWith("[no reply]")||txt2.toLowerCase().includes("did not respond");
@@ -1330,11 +1393,13 @@ function addFb(d){
   const item=document.createElement("div"); item.className="fb-item";
   item.innerHTML=`<div class="fb-turn-lbl">Exchange ${sessionTurn+1}</div><div>${d.feedback||""}</div>${tags?`<div class="tag-row">${tags}</div>`:""}`;
   log.insertBefore(item,log.firstChild);
+  sessionFeedback.unshift({turn:sessionTurn+1,feedback:d.feedback||d.feedback||'',tags:d.tags||[]});
 }
 
 // ── SUMMARY ──
 function showSummary(){
   if(timerInterval)clearInterval(timerInterval);
+  stopRing();
   if(synth)synth.cancel();
   const vals=Object.values(sessionScores).filter(v=>v>0);
   const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;
@@ -1365,11 +1430,66 @@ function showSummary(){
     <div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center">
       <button onclick="location.reload()" style="padding:11px 22px;background:var(--gold);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">Try Again</button>
       <button onclick="backToSetup()" style="padding:11px 18px;background:var(--s1);border:1px solid var(--border2);color:var(--text2);border-radius:9px;font-family:'Instrument Sans',sans-serif;font-size:.82rem;cursor:pointer">New Prospect</button>
+      <button onclick="downloadSummary(avg,p)" style="padding:11px 18px;background:var(--gold);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">⬇ Download Summary</button>
     </div>`;
   postZapier(avg, p);
 }
 
 function backToSetup(){ setScreen("setup"); setJStep("setup"); }
+
+function downloadSummary(avg,p){
+  const skills=SKILLS;
+  const date=new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'});
+  const time=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'});
+  const ch={phone:'Phone call',sms:'SMS',linkedin:'LinkedIn'}[cfg.channel]||cfg.channel;
+  const sc=avg>=70?'#1a7a45':avg>=45?'#b8720a':'#cc3333';
+  const skillRows=skills.map(s=>{
+    const v=sessionScores[s.key]||0;const c=v>=70?'#1a7a45':v>=45?'#b8720a':'#cc3333';
+    return '<tr><td style="padding:7px 10px;font-size:13px;color:#444">'+s.label+'</td>'
+      +'<td style="padding:7px 10px"><div style="background:#eee;border-radius:4px;height:8px;width:140px"><div style="background:'+c+';height:8px;border-radius:4px;width:'+Math.round(v*1.4)+'px"></div></div></td>'
+      +'<td style="padding:7px 10px;font-size:13px;font-weight:700;color:'+c+';text-align:right">'+(v||'—')+'%</td></tr>';
+  }).join('');
+  const good=['treated_as_peer','acknowledged_their_work','planted_right_question','created_genuine_curiosity','no_pitch','handled_with_curiosity','reframed_well','left_door_open','no_pressure','earned_the_question'];
+  const bad=['pitched_instead','led_with_compensation','scripted_feel','missed_objection','argued_instead','closed_too_hard','burned_the_bridge'];
+  const fbRows=(sessionFeedback||[]).map(f=>{
+    const tgs=(f.tags||[]).map(t=>{
+      const c=good.includes(t)?'#1a7a45':bad.includes(t)?'#cc3333':'#b8720a';
+      const bg=good.includes(t)?'#eaf5ef':bad.includes(t)?'#faeaea':'#fef6e6';
+      return '<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+bg+';color:'+c+';margin:2px">'+t.replace(/_/g,' ')+'</span>';
+    }).join('');
+    return '<tr style="border-top:1px solid #eee"><td style="padding:10px;font-size:12px;color:#888;white-space:nowrap;vertical-align:top">Exchange '+f.turn+'</td>'
+      +'<td style="padding:10px"><div style="font-size:13px;color:#333;margin-bottom:5px">'+f.feedback+'</div>'+tgs+'</td></tr>';
+  }).join('');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ProspectAI '+p.name+' '+date+'</title>'
+    +'<style>body{font-family:Helvetica Neue,Arial,sans-serif;background:#f5f2ed;margin:0;padding:24px}'
+    +'.card{background:#fff;border-radius:12px;max-width:680px;margin:0 auto;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}'
+    +'.hdr{background:#1a2440;padding:22px 28px;display:flex;justify-content:space-between;align-items:center}'
+    +'.logo{font-size:18px;font-weight:800;color:#fff}.logo em{color:#e8940a;font-style:normal}'
+    +'.hdr-r{text-align:right;font-size:12px;color:rgba(255,255,255,.5)}'
+    +'.body{padding:24px 28px}.title{font-size:20px;font-weight:700;color:#1e1a14;margin-bottom:3px}'
+    +'.meta{font-size:13px;color:#888;margin-bottom:18px}'
+    +'.hero{text-align:center;padding:20px;background:#f9f6f1;border-radius:10px;margin-bottom:20px}'
+    +'.snum{font-size:52px;font-weight:800;color:'+sc+';line-height:1}'
+    +'.slbl{font-size:11px;color:#bbb;text-transform:uppercase;letter-spacing:.1em;margin-top:4px}'
+    +'h3{font-size:12px;font-weight:700;color:#1a2440;text-transform:uppercase;letter-spacing:.1em;border-bottom:2px solid #e8940a;padding-bottom:5px;margin:20px 0 8px}'
+    +'table{width:100%;border-collapse:collapse}'
+    +'.ftr{background:#f0ece6;padding:12px 28px;font-size:11px;color:#bbb;text-align:center}'
+    +'@media print{body{background:#fff;padding:0}.card{box-shadow:none;max-width:100%}}'
+    +'</style></head><body><div class="card"><div class="hdr"><div class="logo">Prospect<em>AI</em></div>'
+    +'<div class="hdr-r">'+date+' &middot; '+time+'<br>'+(agentName||'Agent')+'</div></div>'
+    +'<div class="body"><div class="title">'+p.name+' &middot; '+p.role+'</div>'
+    +'<div class="meta">'+ch+' &middot; '+cfg.mood+' openness &middot; '+p.company+'</div>'
+    +'<div class="hero"><div class="snum">'+(avg||'&mdash;')+'<span style="font-size:22px;color:#ccc">%</span></div><div class="slbl">Recruiting Score</div></div>'
+    +'<h3>Skill Scores</h3><table>'+skillRows+'</table>'
+    +(fbRows?'<h3>Coach Feedback</h3><table>'+fbRows+'</table>':'')
+    +'</div><div class="ftr">ProspectAI &middot; Professional Recruiting Trainer &middot; Experior Financial</div></div></body></html>';
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='ProspectAI-Recruiting-'+p.name.replace(/\s+/g,'-')+'-'+new Date().toISOString().slice(0,10)+'.html';
+  a.click();URL.revokeObjectURL(url);
+}
 
 function postZapier(avg, p){
   const agent=window._sd||{};
