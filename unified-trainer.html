@@ -659,10 +659,9 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
 
 <script>
 // ── API CONFIGURATION ──
-// Replace the empty string below with your Anthropic API key
-// Get your key at: https://console.anthropic.com
-const ANTHROPIC_API_KEY = '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';
-const API = 'https://api.anthropic.com/v1/messages';
+// Calls go through your secure Cloudflare Worker proxy
+const ANTHROPIC_API_KEY = ''; // Not needed — handled by the proxy
+const API = 'https://calm-mountain-27e8.rainmaker-ag.workers.dev';
 
 // ── URL PARAMS (SuiteDash) ──
 (function(){
@@ -675,12 +674,6 @@ const API = 'https://api.anthropic.com/v1/messages';
 
 // Init profile builder on page load
 document.addEventListener('DOMContentLoaded',()=>{
-  if(!ANTHROPIC_API_KEY){
-    const warn=document.createElement('div');
-    warn.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#cc3333;color:#fff;text-align:center;padding:10px 16px;font-family:sans-serif;font-size:0.82rem;font-weight:600;';
-    warn.textContent='⚠ No API key set — open the HTML file and add your Anthropic API key to ANTHROPIC_API_KEY at the top of the script.';
-    document.body.prepend(warn);
-  }
   buildRegionGrid();
   buildBackgroundGrid();
 });
@@ -1450,7 +1443,7 @@ async function getOpening(){
     ?`You have a question about the Rapidfunnel ${agentName} sent you. Give a brief natural opening — "Hey ${agentName}, I got that thing you sent..." then ask your main question. 1-2 sentences.`
     :`${agentName} is calling you. Give a brief natural greeting — 1-2 sentences.`;
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:120,system:buildSystem(),messages:[{role:'user',content:opener}]})});
     const d=await r.json(); hideProc();
     const full=d.content?.[0]?.text||'';
@@ -1470,7 +1463,7 @@ async function handleSpeech(txt){
   sessionHistory.push({role:'user',content:txt});
   showProc('Responding...');
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:buildSystem(),messages:sessionHistory})});
     const d=await r.json(); hideProc();
     const full=d.content?.[0]?.text||'';
@@ -1543,7 +1536,7 @@ async function sendSms(){
   const typEl=addSmsTyping();
   await new Promise(r=>setTimeout(r,700+Math.random()*1000));
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:buildSystem(),messages:sessionHistory})});
     const d=await r.json();typEl.remove();
     const full=d.content?.[0]?.text||'';
@@ -1630,7 +1623,7 @@ async function sendEmail(){
   const prompt=`${agentName} just sent you an email with subject line "${subject}" and body: "${body}". Reply naturally as ${P().name}. React to the quality — reply if it's good, or write a polite brush-off if it feels generic or salesy.`;
   sessionHistory.push({role:'user',content:prompt});
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:380,system:buildSystem(),messages:sessionHistory})});
     const d=await r.json();
     const full=d.content?.[0]?.text||'';
