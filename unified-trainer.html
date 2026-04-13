@@ -508,7 +508,7 @@ body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t
   </div>
 
   <!-- STEP 5: PROSPECT & MOOD -->
-  <div class="step-card locked" id="sc-prospect">
+  <div class="step-card" id="sc-prospect">
     <div class="step-hdr">
       <div class="step-num" id="sn-prospect">5</div>
       <div class="step-title">Prospect & Mood</div>
@@ -676,6 +676,7 @@ const API = 'https://calm-mountain-27e8.rainmaker-ag.workers.dev';
 document.addEventListener('DOMContentLoaded',()=>{
   buildRegionGrid();
   buildBackgroundGrid();
+  buildPersonaGrid();
 });
 
 // ── BACKGROUND & REGION DATA ──
