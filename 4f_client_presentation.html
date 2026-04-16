@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Financial Picture — 4F Solution</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0d1f3c;
+    --navy-mid: #1a3558;
+    --blue: #1e4d8c;
+    --blue-light: #2a6abf;
+    --gold: #c9a84c;
+    --gold-light: #e8d49a;
+    --gold-pale: #faf5e8;
+    --white: #ffffff;
+    --off-white: #f8f7f4;
+    --text-dark: #0d1f3c;
+    --text-mid: #3a4a6b;
+    --text-muted: #7a8aab;
+    --border: rgba(13,31,60,0.12);
+    --shadow: 0 4px 32px rgba(13,31,60,0.10);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--navy);
+    color: var(--text-dark);
+    overflow: hidden;
+  }
+
+  /* ── OUTER SHELL ── */
+  #shell {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-track {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.12);
+    z-index: 100;
+  }
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+
+  /* ── LOGO STRIP ── */
+  #logo-strip {
+    position: fixed;
+    top: 3px; left: 0; right: 0;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 99;
+    background: rgba(13,31,60,0.95);
+    backdrop-filter: blur(8px);
+  }
+  #logo-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #logo-badge {
+    width: 34px; height: 34px;
+    background: var(--gold);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 13px; font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.02em;
+  }
+  #logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.03em;
+  }
+  #slide-counter {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── SLIDE STAGE ── */
+  #stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── SLIDE ── */
+  .slide {
+    display: none;
+    width: 100%;
+    max-width: 780px;
+    animation: slideIn 0.45s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  .slide.active { display: block; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SLIDE TYPES ── */
+
+  /* Entry slide */
+  .slide-entry {
+    text-align: center;
+  }
+  .slide-entry .entry-eyebrow {
+    font-size: 11px; font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .slide-entry h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.18;
+    margin-bottom: 16px;
+  }
+  .slide-entry h1 span { color: var(--gold); }
+  .slide-entry .entry-sub {
+    font-size: 17px; font-weight: 300;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.6;
+    margin-bottom: 40px;
+    max-width: 520px;
+    margin-left: auto; margin-right: auto;
+  }
+  .entry-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+  .entry-form label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    align-self: flex-start;
+    width: 100%;
+  }
+  .entry-input {
+    width: 100%;
+    padding: 15px 20px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    font-size: 18px;
+    font-family: 'Playfair Display', serif;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    text-align: center;
+  }
+  .entry-input::placeholder { color: rgba(255,255,255,0.25); font-style: italic; }
+  .entry-input:focus {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+  .privacy-note {
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+
+  /* Content slide (white card on navy bg) */
+  .slide-content {
+    background: var(--white);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .slide-content .card-top {
+    padding: 36px 40px 28px;
+  }
+  .slide-content .card-bottom {
+    padding: 0 40px 36px;
+  }
+  .card-eyebrow {
+    font-size: 11px; font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(22px, 3.5vw, 32px);
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .card-title .client-name { color: var(--blue); }
+  .card-body {
+    font-size: 16px; font-weight: 400;
+    color: var(--text-mid);
+    line-height: 1.72;
+  }
+  .card-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+  .card-highlight {
+    background: var(--gold-pale);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-size: 15px;
+    color: var(--text-dark);
+    font-style: italic;
+    line-height: 1.6;
+    margin: 18px 0;
+  }
+
+  /* Fundamental header strip */
+  .fundamental-strip {
+    background: var(--navy);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .f-number {
+    width: 40px; height: 40px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700;
+    color: var(--navy);
+    flex-shrink: 0;
+  }
+  .f-label {
+    font-size: 11px; font-weight: 600;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .f-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 600;
+    color: var(--white);
+    line-height: 1.2;
+  }
+
+  /* ── CHOICE GRID ── */
+  .choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .choices.single { grid-template-columns: 1fr; max-width: 400px; }
+  .choices.triple { grid-template-columns: 1fr; }
+
+  .choice-btn {
+    padding: 16px 20px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px; font-weight: 500;
+    color: var(--navy);
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Source Sans 3', sans-serif;
+    line-height: 1.45;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .choice-btn:hover {
+    border-color: var(--gold);
+    background: var(--gold-pale);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(201,168,76,0.18);
+  }
+  .choice-btn.selected {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: var(--white);
+  }
+  .choice-arrow {
+    width: 22px; height: 22px;
+    background: var(--gold-pale);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: background 0.18s;
+    color: var(--navy);
+  }
+  .choice-btn:hover .choice-arrow {
+    background: var(--gold);
+  }
+  .choice-btn.selected .choice-arrow {
+    background: var(--gold);
+    color: var(--navy);
+  }
+
+  /* ── 4F OVERVIEW GRID ── */
+  .four-f-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .f-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--off-white);
+  }
+  .f-card-num {
+    width: 30px; height: 30px;
+    background: var(--navy);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; font-weight: 700;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .f-card-label {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .f-card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .f-card-desc {
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.5;
+  }
+
+  /* ── CTA SLIDE ── */
+  .slide-cta {
+    text-align: center;
+  }
+  .cta-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 48px 40px;
+    box-shadow: var(--shadow);
+  }
+  .cta-badge {
+    width: 64px; height: 64px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 26px;
+  }
+  .cta-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 14px;
+    line-height: 1.25;
+  }
+  .cta-title .client-name { color: var(--blue); }
+  .cta-body {
+    font-size: 16px;
+    color: var(--text-mid);
+    line-height: 1.7;
+    max-width: 500px;
+    margin: 0 auto 32px;
+  }
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    padding: 15px 32px;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px; font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    transition: all 0.18s;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary:hover { background: var(--navy-mid); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+  .btn-gold {
+    padding: 15px 32px;
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px; font-weight: 700;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    transition: all 0.18s;
+    letter-spacing: 0.02em;
+  }
+  .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+  .btn-outline {
+    padding: 15px 32px;
+    background: transparent;
+    color: var(--navy);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px; font-weight: 500;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .btn-outline:hover { border-color: var(--navy); background: var(--off-white); }
+
+  /* ── NAV FOOTER ── */
+  #nav-footer {
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(13,31,60,0.5);
+    backdrop-filter: blur(8px);
+  }
+  .nav-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.3s;
+  }
+  .nav-dot.active {
+    width: 20px;
+    border-radius: 3px;
+    background: var(--gold);
+  }
+  .nav-dot.done { background: rgba(201,168,76,0.45); }
+
+  #btn-next {
+    padding: 11px 26px;
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 7px;
+    font-size: 14px; font-weight: 700;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #btn-next:hover { background: var(--gold-light); }
+  #btn-next:disabled { opacity: 0.3; cursor: default; }
+  #btn-next svg { transition: transform 0.18s; }
+  #btn-next:not(:disabled):hover svg { transform: translateX(3px); }
+
+  #btn-back {
+    padding: 11px 18px;
+    background: transparent;
+    color: rgba(255,255,255,0.45);
+    border: none;
+    font-size: 13px; font-weight: 500;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    transition: color 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #btn-back:hover { color: rgba(255,255,255,0.85); }
+
+  /* ── BACKGROUND DECOR ── */
+  #bg-decor {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .bg-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.04);
+  }
+
+  #stage { z-index: 1; }
+  #logo-strip { z-index: 99; }
+  #nav-footer { z-index: 99; }
+
+  /* ── COMPLETION CHECK ── */
+  .completion-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 24px 0;
+    text-align: left;
+  }
+  .completion-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--off-white);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-mid);
+  }
+  .step-check {
+    width: 22px; height: 22px;
+    background: #e8f5e9;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #2e7d32;
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    #logo-strip { padding: 12px 18px; }
+    #stage { padding: 72px 14px 28px; }
+    #nav-footer { padding: 12px 18px; }
+    .slide-content .card-top { padding: 24px 22px 18px; }
+    .slide-content .card-bottom { padding: 0 22px 24px; }
+    .fundamental-strip { padding: 16px 22px; }
+    .choices { grid-template-columns: 1fr; }
+    .four-f-grid { grid-template-columns: 1fr; }
+    .cta-card { padding: 32px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-track"><div id="progress-fill"></div></div>
+
+<div id="bg-decor">
+  <div class="bg-circle" style="width:600px;height:600px;right:-200px;top:-200px;"></div>
+  <div class="bg-circle" style="width:400px;height:400px;left:-150px;bottom:-100px;"></div>
+</div>
+
+<div id="shell">
+
+  <div id="logo-strip">
+    <div id="logo-mark">
+      <div id="logo-badge">4F</div>
+      <div id="logo-text">4F Solution</div>
+    </div>
+    <div id="slide-counter"></div>
+  </div>
+
+  <div id="stage">
+
+    <!-- SLIDE 0: Entry -->
+    <div class="slide slide-entry active" data-slide="0">
+      <div class="entry-eyebrow">A personalized experience for you</div>
+      <h1>Your Financial<br><span>Picture</span></h1>
+      <p class="entry-sub">A short, personalized presentation that introduces how we look at your complete financial life — before we meet.</p>
+      <div class="entry-form">
+        <label for="name-field">Your first name</label>
+        <input type="text" id="name-field" class="entry-input" placeholder="e.g. Sarah" autocomplete="given-name" />
+        <button class="btn-gold" id="btn-begin" onclick="beginPresentation()" style="width:100%;font-size:16px;padding:16px;">Begin My Presentation</button>
+        <div class="privacy-note">Your information is private and will only be shared with your financial professional.</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 1: Welcome -->
+    <div class="slide slide-content" data-slide="1">
+      <div class="card-top">
+        <div class="card-eyebrow">Welcome</div>
+        <h2 class="card-title">Hi <span class="client-name"></span>, glad you're here.</h2>
+        <p class="card-body">This short presentation was put together specifically for you. It takes about 5 minutes, and it's designed to give you a clear picture of how we approach financial planning — before we ever sit down together.</p>
+        <div class="card-highlight">"Most people we meet have never had someone look at their complete financial picture all at once. That's exactly what we do."</div>
+        <p class="card-body">By the end, you'll understand the four areas we look at, why they work together, and how this conversation sets you up for clarity — not a sales pitch.</p>
+      </div>
+      <div class="card-divider" style="margin:0 40px;"></div>
+      <div class="card-bottom" style="padding-top:24px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">What would you say best describes where you are right now?</p>
+        <div class="choices triple">
+          <button class="choice-btn" onclick="selectChoice(this,1,'just_starting')">
+            <span class="choice-arrow">→</span>
+            <span>I'm just starting to think seriously about my finances</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,1,'some_things')">
+            <span class="choice-arrow">→</span>
+            <span>I have some things in place but feel like pieces are missing</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,1,'review')">
+            <span class="choice-arrow">→</span>
+            <span>I want a second opinion — a fresh set of eyes on what I've built</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: Values -->
+    <div class="slide slide-content" data-slide="2">
+      <div class="card-top">
+        <div class="card-eyebrow">How we're different</div>
+        <h2 class="card-title">We start with <em>you</em> — not a product.</h2>
+        <p class="card-body">Most financial conversations start with what to buy. We start with something more important: what matters to you. Because every recommendation we ever make traces back to something you've told us.</p>
+        <div class="card-highlight">"I'm recommending this because <em>you</em> told me that _____ matters to you."</div>
+        <p class="card-body">That's not a slogan. It's how every conversation is structured. Your values drive every decision — from how we protect your income to how we grow your wealth and reduce your tax burden.</p>
+      </div>
+      <div class="card-divider" style="margin:0 40px;"></div>
+      <div class="card-bottom" style="padding-top:20px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">When you think about financial security, what matters most?</p>
+        <div class="choices">
+          <button class="choice-btn" onclick="selectChoice(this,2,'family')">
+            <span class="choice-arrow">→</span>
+            <span>Protecting my family no matter what happens to me</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,2,'freedom')">
+            <span class="choice-arrow">→</span>
+            <span>Having the freedom to make choices — retire when I want, live how I want</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,2,'peace')">
+            <span class="choice-arrow">→</span>
+            <span>Not having to worry about money — peace of mind above all</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,2,'legacy')">
+            <span class="choice-arrow">→</span>
+            <span>Building something that lasts — a legacy for those I care about</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: The 4F Overview -->
+    <div class="slide slide-content" data-slide="3">
+      <div class="card-top">
+        <div class="card-eyebrow">The 4F Solution</div>
+        <h2 class="card-title">Four Fundamentals. One complete picture.</h2>
+        <p class="card-body">No matter who you are or where you're starting from, a complete financial plan covers the same four areas. We call them the Four Fundamentals.</p>
+      </div>
+      <div style="padding: 0 40px 36px;">
+        <div class="four-f-grid">
+          <div class="f-card">
+            <div class="f-card-num">1</div>
+            <div>
+              <div class="f-card-label">Fundamental 1</div>
+              <div class="f-card-name">Cash Flow</div>
+              <div class="f-card-desc">The engine that funds everything else. Without this, nothing moves.</div>
+            </div>
+          </div>
+          <div class="f-card">
+            <div class="f-card-num">2</div>
+            <div>
+              <div class="f-card-label">Fundamental 2</div>
+              <div class="f-card-name">Protection</div>
+              <div class="f-card-desc">Ensures nothing derails the plan — no matter what life brings.</div>
+            </div>
+          </div>
+          <div class="f-card">
+            <div class="f-card-num">3</div>
+            <div>
+              <div class="f-card-label">Fundamental 3</div>
+              <div class="f-card-name">Growth</div>
+              <div class="f-card-desc">Builds wealth toward your goals through the right vehicles for you.</div>
+            </div>
+          </div>
+          <div class="f-card">
+            <div class="f-card-num">4</div>
+            <div>
+              <div class="f-card-label">Fundamental 4</div>
+              <div class="f-card-name">Tax Efficiency</div>
+              <div class="f-card-desc">Keeps more of what you earn — at every stage of life.</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:14px;color:var(--text-muted);line-height:1.6;text-align:center;">These four areas work together as a system. Let's walk through each one.</p>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: Fundamental 1 - Cash Flow -->
+    <div class="slide slide-content" data-slide="4">
+      <div class="fundamental-strip">
+        <div class="f-number">1</div>
+        <div>
+          <div class="f-label">Fundamental One</div>
+          <div class="f-title">Cash Flow</div>
+        </div>
+      </div>
+      <div class="card-top" style="padding-top:28px;">
+        <p class="card-body">Cash flow is where every plan begins. It's not just about income — it's about understanding how money moves through your life: what comes in, what goes out, and what's left to build with.</p>
+        <div class="card-highlight">Before we can protect, grow, or tax-shelter anything — we need to know what we have to work with.</div>
+        <p class="card-body">Most people are surprised by what a clear picture of their cash flow reveals. It's often the first time anyone has actually mapped it out for them.</p>
+      </div>
+      <div class="card-divider" style="margin:0 40px;"></div>
+      <div class="card-bottom" style="padding-top:20px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">When it comes to money month to month, <span class="client-name-inline"></span>, how does it feel?</p>
+        <div class="choices">
+          <button class="choice-btn" onclick="selectChoice(this,4,'comfortable')">
+            <span class="choice-arrow">→</span>
+            <span>Comfortable — I know where everything goes</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,4,'tight')">
+            <span class="choice-arrow">→</span>
+            <span>A bit tight — there's not much left at the end of the month</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,4,'unsure')">
+            <span class="choice-arrow">→</span>
+            <span>Honestly, I'm not entirely sure where it all goes</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,4,'good')">
+            <span class="choice-arrow">→</span>
+            <span>Good — I'm saving consistently and on track</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Fundamental 2 - Protection -->
+    <div class="slide slide-content" data-slide="5">
+      <div class="fundamental-strip">
+        <div class="f-number">2</div>
+        <div>
+          <div class="f-label">Fundamental Two</div>
+          <div class="f-title">Protection</div>
+        </div>
+      </div>
+      <div class="card-top" style="padding-top:28px;">
+        <p class="card-body">Imagine you've done everything right — your cash flow is solid, you're building wealth. Now imagine something unexpected stops your income for six months. A year. Or longer. Does the plan survive?</p>
+        <div class="card-highlight">Protection isn't about being pessimistic. It's about making sure that what you build, you keep — regardless of what happens.</div>
+        <p class="card-body">This includes your income, your ability to work, your life, your estate documents — and making sure none of them have gaps that could unravel everything else.</p>
+      </div>
+      <div class="card-divider" style="margin:0 40px;"></div>
+      <div class="card-bottom" style="padding-top:20px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">If something unexpected happened to you tomorrow — how covered do you feel?</p>
+        <div class="choices">
+          <button class="choice-btn" onclick="selectChoice(this,5,'well_covered')">
+            <span class="choice-arrow">→</span>
+            <span>Well covered — I have insurance and my documents are in order</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,5,'some_gaps')">
+            <span class="choice-arrow">→</span>
+            <span>Partially — I have some coverage but I'm not sure it's enough</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,5,'not_sure')">
+            <span class="choice-arrow">→</span>
+            <span>Not sure — I haven't really looked at this closely</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,5,'vulnerable')">
+            <span class="choice-arrow">→</span>
+            <span>Not very — this is an area I know I need to address</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Fundamental 3 - Growth -->
+    <div class="slide slide-content" data-slide="6">
+      <div class="fundamental-strip">
+        <div class="f-number">3</div>
+        <div>
+          <div class="f-label">Fundamental Three</div>
+          <div class="f-title">Growth</div>
+        </div>
+      </div>
+      <div class="card-top" style="padding-top:28px;">
+        <p class="card-body">Growth is where your money goes to work — building toward the goals that matter most to you. Retirement. A home. Education for your children. Financial independence. Whatever your definition of "enough" looks like.</p>
+        <div class="card-highlight">The right growth strategy isn't just about returns. It's about the right vehicles, in the right accounts, aligned with your timeline and your values.</div>
+        <p class="card-body">This is where registered accounts, non-registered investments, and other wealth-building tools come in — chosen specifically for where you are and where you're going.</p>
+      </div>
+      <div class="card-divider" style="margin:0 40px;"></div>
+      <div class="card-bottom" style="padding-top:20px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">When it comes to growing your wealth, where are you today?</p>
+        <div class="choices">
+          <button class="choice-btn" onclick="selectChoice(this,6,'investing')">
+            <span class="choice-arrow">→</span>
+            <span>Actively investing — I have a strategy and I'm building</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,6,'started')">
+            <span class="choice-arrow">→</span>
+            <span>I've started but it feels scattered — no clear strategy</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,6,'beginning')">
+            <span class="choice-arrow">→</span>
+            <span>Just beginning — I'm not sure where to put money first</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,6,'review_needed')">
+            <span class="choice-arrow">→</span>
+            <span>I have savings but I want to know if they're working as hard as they could</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: Fundamental 4 - Tax Efficiency -->
+    <div class="slide slide-content" data-slide="7">
+      <div class="fundamental-strip">
+        <div class="f-number">4</div>
+        <div>
+          <div class="f-label">Fundamental Four</div>
+          <div class="f-title">Tax Efficiency</div>
+        </div>
+      </div>
+      <div class="card-top" style="padding-top:28px;">
+        <p class="card-body">Taxes are the single largest expense most people will face over a lifetime. Yet most financial plans treat tax planning as an afterthought — or leave it entirely to an accountant at year-end.</p>
+        <div class="card-highlight">We look at tax efficiency in three stages: while you're building wealth, when you access it, and when it passes to the people you love.</div>
+        <p class="card-body">Most people are surprised to discover how much more their money can do with intentional tax planning built in from the beginning — not bolted on at the end.</p>
+      </div>
+      <div class="card-divider" style="margin:0 40px;"></div>
+      <div class="card-bottom" style="padding-top:20px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">How much do you think about tax planning as part of your financial plan?</p>
+        <div class="choices">
+          <button class="choice-btn" onclick="selectChoice(this,7,'active')">
+            <span class="choice-arrow">→</span>
+            <span>Actively — it's built into how I invest and save</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,7,'year_end')">
+            <span class="choice-arrow">→</span>
+            <span>Mostly at tax time — I rely on my accountant</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,7,'not_much')">
+            <span class="choice-arrow">→</span>
+            <span>Not much — I know I should but haven't focused on it</span>
+          </button>
+          <button class="choice-btn" onclick="selectChoice(this,7,'overwhelmed')">
+            <span class="choice-arrow">→</span>
+            <span>It feels overwhelming — I'd like it explained clearly</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: What happens next -->
+    <div class="slide slide-content" data-slide="8">
+      <div class="card-top">
+        <div class="card-eyebrow">What happens next</div>
+        <h2 class="card-title">This is where the real conversation begins, <span class="client-name"></span>.</h2>
+        <p class="card-body">Everything you've reflected on — your values, how you feel about each of the four areas — is exactly what we'll explore together when we meet. Not to sell you something. To build a picture that's genuinely yours.</p>
+        <div class="card-highlight">Our first conversation is a discovery. You talk, we listen. No obligations, no pressure, no product pitch.</div>
+        <div class="completion-steps">
+          <div class="completion-step">
+            <div class="step-check">✓</div>
+            <span>You've seen how the 4F Solution works</span>
+          </div>
+          <div class="completion-step">
+            <div class="step-check">✓</div>
+            <span>You've reflected on all four Fundamentals</span>
+          </div>
+          <div class="completion-step">
+            <div class="step-check">✓</div>
+            <span>Your responses have been shared with your financial professional</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: CTA -->
+    <div class="slide slide-cta" data-slide="9">
+      <div class="cta-card">
+        <div class="cta-badge">✦</div>
+        <h2 class="cta-title">You're ready, <span class="client-name"></span>.</h2>
+        <p class="cta-body">Your financial professional has received your responses and is looking forward to your conversation. The next step is simple — book a time that works for you.</p>
+        <div class="cta-buttons">
+          <button class="btn-gold" onclick="bookMeeting()" style="font-size:15px;">Book My Meeting</button>
+          <button class="btn-outline" onclick="watchAgain()">Watch Again</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:20px;line-height:1.6;">Questions before we meet? Reply to the message you received with this presentation and we'll be in touch.</p>
+      </div>
+    </div>
+
+  </div><!-- /stage -->
+
+  <div id="nav-footer">
+    <button id="btn-back" onclick="goBack()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5L4 7l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Back
+    </button>
+    <div class="nav-dots" id="nav-dots"></div>
+    <button id="btn-next" onclick="goNext()">
+      Continue
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 2.5L10 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+  const ZAPIER = "https://hooks.zapier.com/hooks/catch/236545/unc6gn1/";
+  const TOTAL_SLIDES = 10; // 0-9
+
+  let clientName = "";
+  let currentSlide = 0;
+  let choices = {};
+  let zapierSent = false;
+
+  // Slides that require a choice before proceeding
+  const choiceSlides = [1, 2, 4, 5, 6, 7];
+
+  function init() {
+    renderDots();
+    updateNav();
+    document.getElementById('name-field').addEventListener('keydown', e => {
+      if (e.key === 'Enter') beginPresentation();
+    });
+  }
+
+  function renderDots() {
+    const dotsEl = document.getElementById('nav-dots');
+    dotsEl.innerHTML = '';
+    // Show dots for slides 1-8 (content slides)
+    for (let i = 1; i <= 8; i++) {
+      const d = document.createElement('div');
+      d.className = 'nav-dot';
+      if (i === currentSlide) d.classList.add('active');
+      else if (i < currentSlide) d.classList.add('done');
+      dotsEl.appendChild(d);
+    }
+  }
+
+  function updateNav() {
+    const nextBtn = document.getElementById('btn-next');
+    const backBtn = document.getElementById('btn-back');
+    const counter = document.getElementById('slide-counter');
+
+    // Back button
+    backBtn.style.visibility = currentSlide <= 1 ? 'hidden' : 'visible';
+
+    // Hide nav footer on entry and CTA slides
+    const footer = document.getElementById('nav-footer');
+    footer.style.display = (currentSlide === 0 || currentSlide === 9) ? 'none' : 'flex';
+
+    // Counter
+    if (currentSlide > 0 && currentSlide < 9) {
+      counter.textContent = `${currentSlide} of 8`;
+    } else {
+      counter.textContent = '';
+    }
+
+    // Next button label
+    if (currentSlide === 8) {
+      nextBtn.innerHTML = 'See Next Steps <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 2.5L10 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+    } else {
+      nextBtn.innerHTML = 'Continue <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 2.5L10 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+    }
+
+    // Disable next if choice required and not made
+    if (choiceSlides.includes(currentSlide) && !choices[currentSlide]) {
+      nextBtn.disabled = true;
+    } else {
+      nextBtn.disabled = false;
+    }
+
+    // Progress bar
+    const pct = currentSlide === 0 ? 0 : Math.round((currentSlide / 9) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+
+    renderDots();
+  }
+
+  function showSlide(n) {
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.querySelector(`[data-slide="${n}"]`).classList.add('active');
+    currentSlide = n;
+
+    // Inject name into all .client-name spans
+    document.querySelectorAll('.client-name').forEach(el => el.textContent = clientName);
+    document.querySelectorAll('.client-name-inline').forEach(el => el.textContent = clientName ? clientName + ',' : '');
+
+    updateNav();
+  }
+
+  function beginPresentation() {
+    const val = document.getElementById('name-field').value.trim();
+    if (!val) {
+      document.getElementById('name-field').focus();
+      document.getElementById('name-field').style.borderColor = '#e57373';
+      return;
+    }
+    clientName = val.charAt(0).toUpperCase() + val.slice(1);
+    showSlide(1);
+  }
+
+  function selectChoice(btn, slideNum, value) {
+    // Deselect all in this slide
+    const slide = document.querySelector(`[data-slide="${slideNum}"]`);
+    slide.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    choices[slideNum] = { slide: slideNum, value: value, label: btn.querySelector('span:last-child').textContent.trim() };
+    updateNav();
+  }
+
+  function goNext() {
+    if (currentSlide < 9) {
+      if (currentSlide === 8 && !zapierSent) {
+        submitToZapier();
+      }
+      showSlide(currentSlide + 1);
+    }
+  }
+
+  function goBack() {
+    if (currentSlide > 1) showSlide(currentSlide - 1);
+  }
+
+  function submitToZapier() {
+    zapierSent = true;
+    const date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const choiceSummary = Object.values(choices).map(c =>
+      `Slide ${c.slide}: ${c.label}`
+    ).join(' | ');
+
+    const params = new URLSearchParams({
+      name: clientName,
+      date: date,
+      module: "4F Solution — Client Discovery: Interactive Presentation",
+      client_responses: choiceSummary,
+      cash_flow: choices[4] ? choices[4].label : 'Not answered',
+      protection: choices[5] ? choices[5].label : 'Not answered',
+      growth: choices[6] ? choices[6].label : 'Not answered',
+      tax_efficiency: choices[7] ? choices[7].label : 'Not answered',
+      values_priority: choices[2] ? choices[2].label : 'Not answered',
+      starting_point: choices[1] ? choices[1].label : 'Not answered'
+    });
+
+    fetch(ZAPIER, { method: 'POST', body: params, mode: 'no-cors' }).catch(() => {});
+  }
+
+  function bookMeeting() {
+    // Opens a booking link — replace with actual Calendly or booking URL
+    alert('Your professional will be in touch shortly to schedule your meeting.');
+  }
+
+  function watchAgain() {
+    choices = {};
+    zapierSent = false;
+    clientName = "";
+    document.getElementById('name-field').value = '';
+    document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+    showSlide(0);
+  }
+
+  init();
+</script>
+</body>
+</html>
