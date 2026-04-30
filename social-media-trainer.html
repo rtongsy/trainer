@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProspectAI — Social Media Trainer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap');
+:root{
+  --bg:#f5f2ed;
+  --s1:#ffffff;
+  --s2:#f0ece6;
+  --s3:#e8e2d8;
+  --s4:#ddd6c8;
+  --border:rgba(0,0,0,0.08);
+  --border2:rgba(0,0,0,0.12);
+  --border3:rgba(0,0,0,0.20);
+  --navy:#1a2440;--navy-dim:rgba(26,36,64,0.09);--navy-b:rgba(26,36,64,0.25);
+  --gold:#e8940a;--gold2:#f5a82a;--gold-dim:rgba(232,148,10,0.10);--gold-b:rgba(232,148,10,0.30);
+  --amber:#c8900a;--amber-dim:rgba(200,144,10,0.10);
+  --green:#28c97a;--green-dim:rgba(40,201,122,0.09);--green-b:rgba(40,201,122,0.22);
+  --red:#e84848;--red-dim:rgba(232,72,72,0.09);--red-b:rgba(232,72,72,0.22);
+  --blue:#4888f0;--blue-dim:rgba(72,136,240,0.09);--blue-b:rgba(72,136,240,0.25);
+  --text:#1e1a14;--text2:#6a6258;--text3:#a89e90;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--text);}
+body{display:flex;flex-direction:column;min-height:100vh;}
+
+/* PASSWORD */
+#pw-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px;}
+#pw-screen.hidden{display:none;}
+.pw-box{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:32px;max-width:360px;width:90%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+.pw-logo{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:6px;}
+.pw-title{font-family:'Instrument Serif',serif;font-size:1.4rem;color:var(--navy);margin-bottom:4px;}
+.pw-sub{font-size:0.78rem;color:var(--text2);margin-bottom:20px;}
+.pw-input{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:9px;font-size:0.95rem;font-family:'Instrument Sans',sans-serif;background:var(--s2);color:var(--text);text-align:center;letter-spacing:0.08em;margin-bottom:10px;}
+.pw-input:focus{outline:none;border-color:var(--gold);}
+.pw-btn{width:100%;padding:11px;background:var(--gold);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:800;cursor:pointer;letter-spacing:0.04em;}
+.pw-btn:hover{background:var(--gold2);}
+.pw-err{font-size:0.75rem;color:var(--red);margin-top:6px;display:none;}
+
+/* TOP BAR */
+.topbar{height:46px;background:var(--s1);border-bottom:1px solid rgba(232,148,10,0.25);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;box-shadow:0 1px 8px rgba(0,0,0,0.06);}
+.topbar-logo{font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:800;color:var(--gold);letter-spacing:0.04em;}
+.topbar-title{font-size:0.75rem;color:var(--text2);font-weight:500;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.topbar-agent{font-size:0.72rem;color:var(--text2);}
+
+/* LAYOUT */
+.app{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:220px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.main{flex:1;overflow-y:auto;padding:20px;}
+
+/* SIDEBAR */
+.sb-section{padding:12px 12px 6px;font-family:'Syne',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);}
+.sb-track{display:flex;margin:6px 12px 8px;background:var(--s2);border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+.sb-track-btn{flex:1;padding:6px 0;text-align:center;font-size:0.7rem;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;color:var(--text2);border:none;background:transparent;}
+.sb-track-btn.active{background:var(--gold);color:#000;}
+.sb-plat{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 12px 10px;}
+.sb-plat-btn{padding:7px 6px;border-radius:8px;border:1px solid var(--border2);background:var(--s2);cursor:pointer;font-size:0.72rem;font-weight:600;color:var(--text2);text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.13s;}
+.sb-plat-btn.active{border-color:var(--gold);background:var(--gold-dim);color:var(--gold);}
+.sb-plat-icon{font-size:1rem;}
+.sb-mode{display:flex;flex-direction:column;gap:2px;padding:0 8px 8px;}
+.sb-mode-btn{padding:8px 10px;border-radius:7px;font-size:0.75rem;font-weight:500;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:8px;border:none;background:transparent;text-align:left;width:100%;}
+.sb-mode-btn:hover{background:var(--s2);}
+.sb-mode-btn.active{background:var(--gold-dim);color:var(--gold);font-weight:600;}
+.sb-mode-icon{font-size:0.9rem;width:16px;text-align:center;}
+.sb-divider{height:1px;background:var(--border);margin:6px 12px;}
+.sb-agent-section{padding:10px 12px;margin-top:auto;border-top:1px solid var(--border);}
+.sb-label{font-size:0.65rem;color:var(--text3);margin-bottom:4px;font-weight:500;}
+.sb-input{width:100%;padding:7px 10px;border:1px solid var(--border2);border-radius:7px;font-size:0.78rem;font-family:'Instrument Sans',sans-serif;background:var(--s2);color:var(--text);}
+.sb-input:focus{outline:none;border-color:var(--gold);}
+.sb-select{width:100%;padding:7px 10px;border:1px solid var(--border2);border-radius:7px;font-size:0.72rem;font-family:'Instrument Sans',sans-serif;background:var(--s2);color:var(--text);margin-top:6px;}
+
+/* MAIN CONTENT */
+.panel{display:none;}
+.panel.active{display:block;}
+.panel-title{font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.panel-sub{font-size:0.74rem;color:var(--text2);margin-bottom:16px;line-height:1.5;}
+
+/* PLATFORM TIP */
+.plat-tip{background:var(--navy-dim);border:1px solid var(--navy-b);border-radius:9px;padding:9px 13px;font-size:0.74rem;color:var(--navy);line-height:1.55;margin-bottom:16px;}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:14px;}
+.card-label{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+
+/* TEXTAREA */
+.ta{width:100%;min-height:100px;resize:vertical;font-size:0.84rem;padding:10px 12px;border-radius:9px;border:1px solid var(--border2);background:var(--s2);color:var(--text);font-family:'Instrument Sans',sans-serif;line-height:1.55;}
+.ta:focus{outline:none;border-color:var(--gold);}
+.ta-sm{min-height:64px;}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;margin-bottom:14px;}
+.btn-primary{padding:10px 20px;background:var(--gold);color:#000;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:800;cursor:pointer;letter-spacing:0.02em;}
+.btn-primary:hover{background:var(--gold2);}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-secondary{padding:10px 16px;background:transparent;color:var(--text);border:1px solid var(--border2);border-radius:9px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;cursor:pointer;}
+.btn-secondary:hover{background:var(--s2);}
+
+/* LOADING */
+.loading-dots{display:inline-flex;gap:4px;align-items:center;}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:pulse 1.2s infinite;}
+.dot:nth-child(2){animation-delay:0.2s}.dot:nth-child(3){animation-delay:0.4s}
+@keyframes pulse{0%,80%,100%{opacity:0.3}40%{opacity:1}}
+
+/* SCORES */
+.score-grid{display:grid;gap:8px;margin-bottom:12px;}
+.score-card{background:var(--s2);border-radius:9px;padding:10px 12px;text-align:center;}
+.score-num{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text);}
+.score-lbl{font-size:0.65rem;color:var(--text2);margin-top:2px;}
+
+/* REACTIONS */
+.reactions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.rxn{font-size:0.72rem;padding:4px 10px;border-radius:12px;border:1px solid var(--border2);background:var(--s2);color:var(--text2);}
+.rxn.positive{background:var(--green-dim);border-color:var(--green-b);color:#1a7a45;}
+.rxn.negative{background:var(--red-dim);border-color:var(--red-b);color:#cc3333;}
+.rxn.neutral{background:var(--amber-dim);border-color:rgba(200,144,10,0.3);color:var(--amber);}
+
+/* COMMENTS */
+.comment-list{display:flex;flex-direction:column;gap:9px;}
+.cmt{display:flex;gap:8px;}
+.cmt-av{width:28px;height:28px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:600;color:var(--text2);flex-shrink:0;}
+.cmt-body{background:var(--s2);border-radius:0 9px 9px 9px;padding:7px 11px;font-size:0.78rem;line-height:1.5;color:var(--text);flex:1;}
+.cmt-name{font-size:0.65rem;font-weight:600;color:var(--text2);margin-bottom:2px;}
+.cmt.neg .cmt-body{background:var(--red-dim);border:1px solid var(--red-b);}
+
+/* COACH BOX */
+.coach{background:var(--navy-dim);border-left:3px solid var(--navy);border-radius:0 9px 9px 0;padding:11px 14px;font-size:0.78rem;color:var(--text);line-height:1.65;margin-bottom:12px;}
+.coach-lbl{font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--navy);margin-bottom:5px;}
+.coach strong{font-weight:600;}
+
+/* DM THREAD */
+.dm-thread{display:flex;flex-direction:column;gap:9px;min-height:80px;max-height:320px;overflow-y:auto;margin-bottom:12px;padding:4px 0;}
+.dm-bub{max-width:78%;padding:8px 13px;border-radius:16px;font-size:0.82rem;line-height:1.5;}
+.dm-bub.me{background:var(--gold-dim);border:1px solid var(--gold-b);color:var(--text);align-self:flex-end;border-bottom-right-radius:4px;}
+.dm-bub.them{background:var(--s2);border:1px solid var(--border2);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;}
+.dm-bub .dm-who{font-size:0.62rem;color:var(--text2);margin-bottom:2px;}
+.dm-empty{text-align:center;font-size:0.74rem;color:var(--text3);padding:16px 0;}
+
+/* DEMOGRAPHIC */
+.demo-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
+.demo-chip{padding:6px 13px;border-radius:16px;border:1px solid var(--border2);background:var(--s2);cursor:pointer;font-size:0.74rem;color:var(--text2);user-select:none;transition:all 0.12s;}
+.demo-chip.sel{background:var(--gold-dim);border-color:var(--gold-b);color:var(--gold);font-weight:600;}
+.demo-chip.maxed:not(.sel){opacity:0.35;cursor:default;}
+.demo-count{font-size:0.72rem;color:var(--text2);margin-bottom:12px;}
+
+/* DEMO RESULT CARDS */
+.demo-result-card{background:var(--s1);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+.drc-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;border-bottom:1px solid transparent;}
+.drc-hdr:hover{background:var(--s2);}
+.drc-hdr.open{border-bottom-color:var(--border);}
+.drc-name{font-size:0.78rem;font-weight:600;color:var(--text);}
+.drc-pills{display:flex;gap:6px;align-items:center;}
+.drc-pill{font-size:0.65rem;padding:3px 9px;border-radius:10px;font-weight:600;}
+.pill-high{background:var(--green-dim);color:#1a7a45;}
+.pill-mid{background:var(--amber-dim);color:var(--amber);}
+.pill-low{background:var(--red-dim);color:#cc3333;}
+.drc-chev{font-size:0.7rem;color:var(--text3);transition:transform 0.2s;}
+.drc-chev.open{transform:rotate(180deg);}
+.drc-body{padding:12px 14px;display:none;}
+.drc-body.open{display:block;}
+.drc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.drc-cell{font-size:0.72rem;color:var(--text2);line-height:1.5;}
+.drc-cell strong{font-weight:600;display:block;margin-bottom:1px;}
+.drc-cell .pos{color:#1a7a45;} .drc-cell .neg{color:#cc3333;}
+
+/* RECRUIT TYPE */
+.type-row{display:flex;gap:8px;margin-bottom:14px;}
+.type-btn{padding:7px 16px;border-radius:20px;border:1px solid var(--border2);background:var(--s2);cursor:pointer;font-size:0.75rem;font-weight:500;color:var(--text2);transition:all 0.12s;}
+.type-btn.active{background:var(--green-dim);border-color:var(--green-b);color:#1a7a45;font-weight:700;}
+
+/* PROSPECT CARD (for comment mode) */
+.prospect-post-card{background:var(--s1);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:12px;}
+.pp-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.pp-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;flex-shrink:0;}
+.pp-name{font-size:0.82rem;font-weight:600;color:var(--text);}
+.pp-meta{font-size:0.68rem;color:var(--text2);}
+.pp-text{font-size:0.8rem;line-height:1.6;color:var(--text);white-space:pre-wrap;}
+
+/* OVERALL BOX */
+.overall-box{background:var(--navy);border-radius:10px;padding:14px 16px;margin-bottom:14px;color:white;}
+.overall-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;}
+.ov-card{text-align:center;}
+.ov-num{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);}
+.ov-lbl{font-size:0.62rem;color:rgba(255,255,255,0.55);margin-top:1px;}
+.ov-sum{font-size:0.74rem;color:rgba(255,255,255,0.7);line-height:1.5;}
+
+.hidden{display:none;}
+.mt8{margin-top:8px;}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD SCREEN -->
+<div id="pw-screen">
+  <div class="pw-box">
+    <div class="pw-logo">ProspectAI</div>
+    <div class="pw-title">Social Media Trainer</div>
+    <div class="pw-sub">Practice posts, DMs, comments &amp; recruiting across every major platform</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="Enter access code" onkeydown="if(event.key==='Enter')checkPW()">
+    <button class="pw-btn" onclick="checkPW()">Enter</button>
+    <div class="pw-err" id="pw-err">Incorrect access code. Please try again.</div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">ProspectAI</div>
+  <div class="topbar-title">Social Media Trainer</div>
+  <div class="topbar-right">
+    <span class="topbar-agent" id="topbar-agent"></span>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-section">Track</div>
+    <div class="sb-track">
+      <button class="sb-track-btn active" id="track-prospect" onclick="setTrack('prospect')">Prospecting</button>
+      <button class="sb-track-btn" id="track-recruit" onclick="setTrack('recruit')">Recruiting</button>
+    </div>
+
+    <div class="sb-section">Platform</div>
+    <div class="sb-plat">
+      <div class="sb-plat-btn active" id="plat-facebook" onclick="setPlatform('facebook')">
+        <span class="sb-plat-icon">📘</span>Facebook
+      </div>
+      <div class="sb-plat-btn" id="plat-linkedin" onclick="setPlatform('linkedin')">
+        <span class="sb-plat-icon">💼</span>LinkedIn
+      </div>
+      <div class="sb-plat-btn" id="plat-instagram" onclick="setPlatform('instagram')">
+        <span class="sb-plat-icon">📸</span>Instagram
+      </div>
+      <div class="sb-plat-btn" id="plat-tiktok" onclick="setPlatform('tiktok')">
+        <span class="sb-plat-icon">🎵</span>TikTok
+      </div>
+    </div>
+
+    <div class="sb-divider"></div>
+    <div class="sb-section">Mode</div>
+    <div class="sb-mode" id="sb-mode-list"></div>
+
+    <div class="sb-agent-section">
+      <div class="sb-label">Your name</div>
+      <input class="sb-input" type="text" id="agent-name" value="Alex" placeholder="Your name" oninput="updateAgentName()">
+      <select class="sb-select" id="niche-select" onchange="resetOutputs()">
+      </select>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ===== PROSPECT: POST ===== -->
+    <div class="panel active" id="panel-prospect-post">
+      <div class="panel-title">Post Preview — Demographic Breakdown</div>
+      <div class="panel-sub">Select 3–5 audience groups, write your post, and see how each demographic reacts.</div>
+      <div id="pp-plat-tip" class="plat-tip"></div>
+
+      <div class="card">
+        <div class="card-label">Select demographics to test (choose 3–5)</div>
+        <div class="demo-chips" id="pp-demo-chips"></div>
+        <div class="demo-count" id="pp-demo-count">0 of 5 selected — minimum 3 to run</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Your post</div>
+        <textarea class="ta" id="pp-post-input" placeholder="Write or paste your post here..."></textarea>
+        <div class="btn-row">
+          <button class="btn-primary" id="pp-run-btn" onclick="runDemoAnalysis()">Analyze by demographic</button>
+          <button class="btn-secondary" onclick="loadSamplePost('prospect')">Load sample post</button>
+        </div>
+      </div>
+
+      <div id="pp-results" class="hidden">
+        <div class="card-label" style="margin-bottom:8px;">Overall across selected groups</div>
+        <div class="overall-box">
+          <div class="overall-scores">
+            <div class="ov-card"><div class="ov-num" id="pp-ov-reach">—</div><div class="ov-lbl">Avg reach</div></div>
+            <div class="ov-card"><div class="ov-num" id="pp-ov-engage">—</div><div class="ov-lbl">Avg engagement</div></div>
+            <div class="ov-card"><div class="ov-num" id="pp-ov-trust">—</div><div class="ov-lbl">Avg trust signal</div></div>
+          </div>
+          <div class="ov-sum" id="pp-ov-sum"></div>
+        </div>
+        <div class="card-label" style="margin-bottom:8px;">Breakdown by demographic</div>
+        <div id="pp-demo-results"></div>
+      </div>
+    </div>
+
+    <!-- ===== PROSPECT: DM ===== -->
+    <div class="panel" id="panel-prospect-dm">
+      <div class="panel-title">DM Conversation</div>
+      <div id="pdm-plat-tip" class="plat-tip"></div>
+      <div class="card">
+        <div class="card-label">Simulated prospect DM</div>
+        <div class="dm-thread" id="pdm-thread"><div class="dm-empty">Start the conversation below</div></div>
+        <textarea class="ta ta-sm" id="pdm-input" placeholder="Type your message..."></textarea>
+        <div class="btn-row">
+          <button class="btn-primary" id="pdm-send-btn" onclick="sendDM('prospect')">Send</button>
+          <button class="btn-secondary" onclick="resetDM('prospect')">Reset conversation</button>
+        </div>
+      </div>
+      <div id="pdm-coach" class="hidden"></div>
+    </div>
+
+    <!-- ===== PROSPECT: COMMENT ===== -->
+    <div class="panel" id="panel-prospect-comment">
+      <div class="panel-title">Comment on a Prospect's Post</div>
+      <div id="pco-plat-tip" class="plat-tip"></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="loadProspectPost()">Load prospect post</button>
+      </div>
+      <div id="pco-post-area" class="hidden">
+        <div class="prospect-post-card">
+          <div class="pp-hdr">
+            <div class="pp-av" id="pco-av" style="background:#4888f0;color:white;">PR</div>
+            <div>
+              <div class="pp-name" id="pco-name">Prospect</div>
+              <div class="pp-meta" id="pco-meta">Just posted</div>
+            </div>
+          </div>
+          <div class="pp-text" id="pco-post">Loading...</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Your comment</div>
+          <textarea class="ta ta-sm" id="pco-input" placeholder="Write your comment..."></textarea>
+          <div class="btn-row">
+            <button class="btn-primary" id="pco-btn" onclick="analyzeComment()">Simulate reaction</button>
+          </div>
+        </div>
+        <div id="pco-result" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- ===== PROSPECT: NEGATIVE ===== -->
+    <div class="panel" id="panel-prospect-negative">
+      <div class="panel-title">Handle a Negative Comment</div>
+      <div id="pneg-plat-tip" class="plat-tip"></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="generateNegativeScenario()">Generate scenario</button>
+      </div>
+      <div id="pneg-scenario" class="hidden">
+        <div class="card">
+          <div id="pneg-thread"></div>
+          <div class="card-label mt8">Your response</div>
+          <textarea class="ta ta-sm" id="pneg-input" placeholder="How do you respond to this comment?"></textarea>
+          <div class="btn-row">
+            <button class="btn-primary" id="pneg-btn" onclick="respondToNegative()">Post response</button>
+          </div>
+        </div>
+        <div id="pneg-result" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- ===== RECRUIT: POST ===== -->
+    <div class="panel" id="panel-recruit-post">
+      <div class="panel-title">Recruiting Post — Demographic Breakdown</div>
+      <div class="panel-sub">See how different candidate profiles respond to your recruiting content.</div>
+      <div id="rp-plat-tip" class="plat-tip"></div>
+
+      <div class="card">
+        <div class="card-label">Candidate type</div>
+        <div class="type-row">
+          <div class="type-btn active" id="rtype-warm" onclick="setRecruitType('warm')">Warm contact</div>
+          <div class="type-btn" id="rtype-cold" onclick="setRecruitType('cold')">Cold outreach</div>
+        </div>
+        <div class="card-label">Select candidate demographics (choose 3–5)</div>
+        <div class="demo-chips" id="rp-demo-chips"></div>
+        <div class="demo-count" id="rp-demo-count">0 of 5 selected — minimum 3 to run</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Your recruiting post</div>
+        <textarea class="ta" id="rp-post-input" placeholder="Write or paste your recruiting post here..."></textarea>
+        <div class="btn-row">
+          <button class="btn-primary" id="rp-run-btn" onclick="runRecruitDemoAnalysis()">Analyze by demographic</button>
+          <button class="btn-secondary" onclick="loadSamplePost('recruit')">Load sample post</button>
+        </div>
+      </div>
+
+      <div id="rp-results" class="hidden">
+        <div class="card-label" style="margin-bottom:8px;">Overall across selected groups</div>
+        <div class="overall-box">
+          <div class="overall-scores">
+            <div class="ov-card"><div class="ov-num" id="rp-ov-reach">—</div><div class="ov-lbl">Avg reach</div></div>
+            <div class="ov-card"><div class="ov-num" id="rp-ov-interest">—</div><div class="ov-lbl">Avg interest</div></div>
+            <div class="ov-card"><div class="ov-num" id="rp-ov-cred">—</div><div class="ov-lbl">Avg credibility</div></div>
+          </div>
+          <div class="ov-sum" id="rp-ov-sum"></div>
+        </div>
+        <div class="card-label" style="margin-bottom:8px;">Breakdown by demographic</div>
+        <div id="rp-demo-results"></div>
+      </div>
+    </div>
+
+    <!-- ===== RECRUIT: DM ===== -->
+    <div class="panel" id="panel-recruit-dm">
+      <div class="panel-title">Recruiting DM</div>
+      <div id="rdm-plat-tip" class="plat-tip"></div>
+      <div class="card">
+        <div class="card-label">Candidate type</div>
+        <div class="type-row">
+          <div class="type-btn active" id="rdm-rtype-warm" onclick="setRecruitTypeDM('warm')">Warm contact</div>
+          <div class="type-btn" id="rdm-rtype-cold" onclick="setRecruitTypeDM('cold')">Cold outreach</div>
+        </div>
+        <div class="card-label">Simulated candidate DM</div>
+        <div class="dm-thread" id="rdm-thread"><div class="dm-empty">Start the conversation below</div></div>
+        <textarea class="ta ta-sm" id="rdm-input" placeholder="Type your message..."></textarea>
+        <div class="btn-row">
+          <button class="btn-primary" id="rdm-send-btn" onclick="sendDM('recruit')">Send</button>
+          <button class="btn-secondary" onclick="resetDM('recruit')">Reset conversation</button>
+        </div>
+      </div>
+      <div id="rdm-coach" class="hidden"></div>
+    </div>
+
+    <!-- ===== RECRUIT: COMMENT ===== -->
+    <div class="panel" id="panel-recruit-comment">
+      <div class="panel-title">Respond to an Interested Commenter</div>
+      <div id="rco-plat-tip" class="plat-tip"></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="loadRecruitComment()">Generate interested commenter</button>
+      </div>
+      <div id="rco-post-area" class="hidden">
+        <div class="prospect-post-card">
+          <div class="pp-hdr">
+            <div class="pp-av" id="rco-av" style="background:#28c97a;color:white;">RC</div>
+            <div>
+              <div class="pp-name" id="rco-name">Candidate</div>
+              <div class="pp-meta" id="rco-meta">Commented on your post</div>
+            </div>
+          </div>
+          <div class="pp-text" id="rco-comment">Loading...</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Your reply</div>
+          <textarea class="ta ta-sm" id="rco-input" placeholder="Reply to move the conversation forward..."></textarea>
+          <div class="btn-row">
+            <button class="btn-primary" id="rco-btn" onclick="analyzeRecruitReply()">Simulate reaction</button>
+          </div>
+        </div>
+        <div id="rco-result" class="hidden"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+const API = "https://calm-mountain-27e8.rainmaker-ag.workers.dev";
+const ZAPIER = "https://hooks.zapier.com/hooks/catch/236545/unc6gn1/";
+const PASSWORD = "step2connect";
+
+// ── STATE ──
+let currentTrack = "prospect";
+let currentPlatform = "facebook";
+let currentMode = "post";
+let recruitType = "warm";
+let recruitTypeDM = "warm";
+let dmState = {
+  prospect: { history: [], convo: [] },
+  recruit: { history: [], convo: [] }
+};
+let ppSelected = [];
+let rpSelected = [];
+let negativeData = {};
+let recruitCommentData = {};
+
+// ── MODES ──
+const MODES = {
+  prospect: [
+    { id: "post", icon: "📝", label: "Post preview" },
+    { id: "dm", icon: "💬", label: "DM conversation" },
+    { id: "comment", icon: "💭", label: "Comment on posts" },
+    { id: "negative", icon: "🔥", label: "Handle negativity" },
+  ],
+  recruit: [
+    { id: "post", icon: "📝", label: "Recruiting post" },
+    { id: "dm", icon: "💬", label: "Recruiting DM" },
+    { id: "comment", icon: "💭", label: "Respond to interest" },
+  ]
+};
+
+// ── PLATFORM TIPS ──
+const TIPS = {
+  prospect: {
+    facebook: "Facebook: Personal storytelling works best. Write like you're talking to a friend, not marketing to a list.",
+    linkedin: "LinkedIn: Lead with insight. Avoid hard sells — position yourself as a trusted advisor, not a salesperson.",
+    instagram: "Instagram: Lead with emotion and a strong hook. Use line breaks. Keep it real and relatable.",
+    tiktok: "TikTok: Conversational and punchy. Authentic beats polished every time."
+  },
+  recruit: {
+    facebook: "Facebook recruiting: Lifestyle and opportunity posts perform well. Focus on freedom, flexibility, and income potential.",
+    linkedin: "LinkedIn recruiting: Professional credibility is everything. Lead with career growth and financial upside.",
+    instagram: "Instagram recruiting: Show the life, not the job. Aspirational content attracts curious candidates.",
+    tiktok: "TikTok recruiting: Behind-the-scenes and 'day in the life' content resonates. Short, honest, and energetic."
+  }
+};
+
+// ── DEMOGRAPHICS ──
+const DEMOS = {
+  prospect: [
+    "Young couples (25–34), dual income, no kids yet",
+    "Parents (30–45) with school-age children",
+    "Pre-retirees (50–65) focused on retirement",
+    "Small business owners (35–55)",
+    "Single income households (28–45)",
+    "Recent immigrants building financial roots",
+    "Millennials (28–38) carrying student debt",
+    "Empty nesters (55–65) reassessing finances",
+    "Self-employed / gig workers (25–45)",
+    "Young professionals (22–32) starting careers"
+  ],
+  recruit: [
+    "Employed professionals (28–40) feeling stuck",
+    "Stay-at-home parents (30–45) re-entering workforce",
+    "Recent graduates (22–28) seeking opportunity",
+    "Sales professionals (25–45) wanting more autonomy",
+    "Side-hustlers (25–40) ready to go full-time",
+    "Career changers (35–50) in transition",
+    "Entrepreneurs (30–50) open to partnerships",
+    "Licensed financial professionals (30–50)",
+    "Retail / service workers (22–35) seeking growth",
+    "Corporate employees (30–45) burned out"
+  ]
+};
+
+// ── SAMPLE POSTS ──
+const SAMPLES = {
+  prospect: {
+    facebook: "Just sat down with a family who thought they had everything figured out — good jobs, nice home, two kids in school.\n\nThen we ran the numbers.\n\nIf something happened to either parent tomorrow, they'd have about 4 months of expenses covered. After that? The kids' college fund would be the emergency fund.\n\nIt's not a fun conversation. But it's a necessary one.\n\nIf you haven't done a proper coverage review lately, let's talk.",
+    linkedin: "3 questions I ask every client before we talk about any product:\n\n1. What would happen to your family's lifestyle if your income stopped tomorrow?\n2. How long could your savings realistically last?\n3. Is there a plan in place, or just an intention to make one?\n\nMost people have thought about these. Very few have answered them.\n\nIf you'd like to work through them, my calendar is open.",
+    instagram: "Nobody wants to think about worst case scenarios.\n\nBut here's what I know after years in this industry:\n\nThe families who had a plan didn't just survive the hard moments.\n\nThey had options.\n\nThat's what financial protection actually buys you — options.\n\nDM me if you want to see what that looks like for your family.",
+    tiktok: "Real talk — most people think life insurance is just for old people.\n\nSo let me ask you something:\n\nIf you stopped working tomorrow, how long could your family keep the lights on?\n\nWeek? Month? A year?\n\nThat's actually the right question to ask.\n\nDrop your answer in the comments."
+  },
+  recruit: {
+    facebook: "Five years ago I was working a job I was good at but didn't love.\n\nI was trading hours for dollars, my ceiling was set by someone else, and I had zero say in my schedule.\n\nToday I run my own business, set my own hours, and helped my team earn over $400K last year combined.\n\nI'm looking for 2–3 driven people ready for something different. If that sounds like you — let's talk.",
+    linkedin: "We're expanding and I'm looking for motivated professionals to join our licensed financial services team.\n\nWhat I'm looking for:\n- Coachable and driven\n- Strong communicators (no finance background required)\n- Wants to build a business, not just work a job\n\nWhat we offer: full training, licensing support, uncapped income, a proven system.\n\nIf you're curious, send me a DM.",
+    instagram: "The best decision I made was betting on myself.\n\nI left a salary, benefits, and a very predictable future.\n\nAnd I've never looked back.\n\nIf you've thought about building something of your own — DM me the word READY and let's talk.",
+    tiktok: "Storytime: I used to work 50-hour weeks for someone else's dream.\n\nNow I work flexible hours building my own.\n\nThe difference? I found an industry where the effort you put in directly matches what you take home.\n\nNo cap. No politics. Comment TELL ME MORE."
+  }
+};
+
+// ── PROSPECT POSTS (for comment mode) ──
+const PROSPECT_POSTS = {
+  facebook: { name: "Sandra Kowalski", initials: "SK", color: "#4888f0", meta: "Shared with friends · 3h", post: "Can't believe it's been 10 years since we bought our house. Kids are growing up so fast and honestly just trying to keep up with everything — work, school, saving for... everything. Feels like we're always behind. Anyone else feel this way? 😅" },
+  linkedin: { name: "Marcus Oyelaran", initials: "MO", color: "#0A66C2", meta: "Director of Operations · 5h", post: "Big milestone — officially 15 years running my own business. What I wish I knew at year 1: revenue is vanity, profit is sanity, and cash flow is reality. The third one almost took me down twice. What's the biggest lesson you learned running your own shop?" },
+  instagram: { name: "taylormakes_things", initials: "TM", color: "#dc2743", meta: "3 hours ago", post: "Starting to think about what financial stability actually looks like in my 30s vs my 20s. Less hustle, more intention. Fewer shiny things, more boring-but-important decisions. Growth hits different when you stop chasing and start building 🌱" },
+  tiktok: { name: "davetalkslife", initials: "DL", color: "#000", meta: "2h ago", post: "POV: you're 34, have a decent job, two kids, a mortgage, and zero idea if your financial situation is actually okay or if you're just getting by and hoping for the best. Nobody teaches you this stuff." }
+};
+
+// ── PASSWORD ──
+function checkPW() {
+  const v = document.getElementById("pw-input").value;
+  if (v === PASSWORD) {
+    document.getElementById("pw-screen").classList.add("hidden");
+    init();
+  } else {
+    document.getElementById("pw-err").style.display = "block";
+    document.getElementById("pw-input").value = "";
+  }
+}
+
+// ── INIT ──
+function init() {
+  updateAgentName();
+  buildModeSidebar();
+  buildDemoChips("prospect");
+  buildDemoChips("recruit");
+  updateNicheSelect();
+  updateAllTips();
+}
+
+function updateAgentName() {
+  const n = document.getElementById("agent-name").value || "Alex";
+  document.getElementById("topbar-agent").textContent = n;
+}
+
+// ── SIDEBAR ──
+function buildModeSidebar() {
+  const modes = MODES[currentTrack];
+  document.getElementById("sb-mode-list").innerHTML = modes.map(m =>
+    `<button class="sb-mode-btn ${m.id === currentMode ? "active" : ""}" onclick="setMode('${m.id}')">
+      <span class="sb-mode-icon">${m.icon}</span>${m.label}
+    </button>`
+  ).join("");
+}
+
+function setTrack(t) {
+  currentTrack = t;
+  ["prospect","recruit"].forEach(x => document.getElementById("track-"+x).classList.toggle("active", x===t));
+  currentMode = "post";
+  buildModeSidebar();
+  updateNicheSelect();
+  updateAllTips();
+  showPanel();
+}
+
+function setPlatform(p) {
+  currentPlatform = p;
+  ["facebook","linkedin","instagram","tiktok"].forEach(x => document.getElementById("plat-"+x).classList.toggle("active", x===p));
+  updateAllTips();
+  resetOutputs();
+}
+
+function setMode(m) {
+  currentMode = m;
+  document.querySelectorAll(".sb-mode-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".sb-mode-btn").forEach(b => { if(b.textContent.trim().includes(MODES[currentTrack].find(x=>x.id===m)?.label)) b.classList.add("active"); });
+  buildModeSidebar();
+  showPanel();
+}
+
+function showPanel() {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  const id = "panel-"+currentTrack+"-"+currentMode;
+  const el = document.getElementById(id);
+  if (el) el.classList.add("active");
+}
+
+function updateNicheSelect() {
+  const sel = document.getElementById("niche-select");
+  if (currentTrack === "recruit") {
+    sel.innerHTML = [
+      "Currently employed in another industry",
+      "Working in sales / business development",
+      "Recent graduate or career changer",
+      "Stay-at-home parent returning to work",
+      "Licensed financial professional",
+      "Entrepreneur or side-hustler"
+    ].map(o => `<option value="${o}">${o}</option>`).join("");
+  } else {
+    sel.innerHTML = [
+      "Life insurance prospects",
+      "Small business owners",
+      "Parents aged 30–45",
+      "Pre-retirees aged 50–65",
+      "Young professionals",
+      "Real estate investors"
+    ].map(o => `<option value="${o}">${o}</option>`).join("");
+  }
+}
+
+function updateAllTips() {
+  const tip = TIPS[currentTrack][currentPlatform];
+  ["pp","pdm","pco","pneg"].forEach(id => {
+    const el = document.getElementById(id+"-plat-tip");
+    if (el) el.textContent = tip;
+  });
+  const rtip = TIPS.recruit[currentPlatform];
+  ["rp","rdm","rco"].forEach(id => {
+    const el = document.getElementById(id+"-plat-tip");
+    if (el) el.textContent = rtip;
+  });
+}
+
+function resetOutputs() {
+  ["pp-results","pco-post-area","pco-result","pneg-scenario","pneg-result","pdm-coach",
+   "rp-results","rco-post-area","rco-result","rdm-coach"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = ""; el.classList.add("hidden"); }
+  });
+  dmState = { prospect:{history:[],convo:[]}, recruit:{history:[],convo:[]} };
+  renderDMThread("prospect");
+  renderDMThread("recruit");
+}
+
+// ── DEMOGRAPHIC CHIPS ──
+function buildDemoChips(track) {
+  const containerId = track === "prospect" ? "pp-demo-chips" : "rp-demo-chips";
+  const el = document.getElementById(containerId);
+  el.innerHTML = DEMOS[track].map((d, i) =>
+    `<span class="demo-chip" onclick="toggleDemo('${track}',${i},this)" data-demo="${i}" data-label="${d.replace(/"/g,'&quot;')}">${d}</span>`
+  ).join("");
+}
+
+function toggleDemo(track, idx, el) {
+  const demo = DEMOS[track][idx];
+  const sel = track === "prospect" ? ppSelected : rpSelected;
+  if (el.classList.contains("sel")) {
+    if (track === "prospect") ppSelected = ppSelected.filter(d=>d!==demo);
+    else rpSelected = rpSelected.filter(d=>d!==demo);
+    el.classList.remove("sel");
+  } else {
+    if (sel.length >= 5) return;
+    sel.push(demo);
+    el.classList.add("sel");
+  }
+  updateDemoCount(track);
+}
+
+function updateDemoCount(track) {
+  const sel = track === "prospect" ? ppSelected : rpSelected;
+  const countId = track === "prospect" ? "pp-demo-count" : "rp-demo-count";
+  document.getElementById(countId).textContent = `${sel.length} of 5 selected — minimum 3 to run`;
+  const chipsId = track === "prospect" ? "pp-demo-chips" : "rp-demo-chips";
+  document.querySelectorAll(`#${chipsId} .demo-chip`).forEach(c => {
+    c.classList.toggle("maxed", sel.length >= 5 && !c.classList.contains("sel"));
+  });
+}
+
+// ── NICHE / AGENT ──
+function getNiche() { return document.getElementById("niche-select").value; }
+function getAgent() { return document.getElementById("agent-name").value || "Alex"; }
+
+// ── SAMPLE POSTS ──
+function loadSamplePost(track) {
+  const inputId = track === "prospect" ? "pp-post-input" : "rp-post-input";
+  document.getElementById(inputId).value = SAMPLES[track][currentPlatform];
+}
+
+// ── API ──
+async function fetchWithRetry(body, maxRetries=3) {
+  for (let i = 0; i < maxRetries; i++) {
+    const r = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.type === "overloaded_error") {
+      if (i < maxRetries - 1) await new Promise(res => setTimeout(res, 2000 * (i+1)));
+      else throw new Error("API overloaded");
+    } else {
+      return d;
+    }
+  }
+}
+
+function parseJSON(raw) {
+  return JSON.parse(raw.replace(/```json|```/g,"").trim());
+}
+
+function scoreClass(n) {
+  if (n >= 70) return "pill-high";
+  if (n >= 45) return "pill-mid";
+  return "pill-low";
+}
+
+function setLoading(btnId, loading, origText) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.innerHTML = loading
+    ? '<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>'
+    : origText;
+}
+
+// ── PROSPECT POST: DEMOGRAPHIC ANALYSIS ──
+async function runDemoAnalysis() {
+  const post = document.getElementById("pp-post-input").value.trim();
+  if (!post) return alert("Please write or load a post first.");
+  if (ppSelected.length < 3) return alert("Please select at least 3 demographics.");
+
+  setLoading("pp-run-btn", true);
+  const resultsEl = document.getElementById("pp-results");
+  const demoResultsEl = document.getElementById("pp-demo-results");
+  resultsEl.classList.remove("hidden");
+  document.getElementById("pp-ov-reach").textContent = "—";
+  document.getElementById("pp-ov-engage").textContent = "—";
+  document.getElementById("pp-ov-trust").textContent = "—";
+  document.getElementById("pp-ov-sum").textContent = "";
+
+  demoResultsEl.innerHTML = ppSelected.map((d,i) =>
+    `<div class="demo-result-card" id="pp-drc-${i}">
+      <div class="drc-hdr"><div class="drc-name">${d}</div>
+      <div class="loading-dots" style="color:var(--text3)"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+    </div>`
+  ).join("");
+
+  const results = [];
+  let totR=0, totE=0, totT=0;
+
+  const system = (demo) => `You are simulating how the demographic "${demo}" responds to a prospecting post on ${currentPlatform}. The agent targets: ${getNiche()}.
+Respond ONLY with valid JSON, no other text:
+{"reach_score":<1-100>,"engagement_score":<1-100>,"trust_score":<1-100>,"reactions":[{"type":"positive","text":"label"},{"type":"positive","text":"label"},{"type":"neutral","text":"label"},{"type":"negative","text":"label"}],"top_comment":{"name":"Realistic name","text":"Most likely comment from this demographic"},"why_it_works":"One sentence on what resonates.","why_it_misses":"One sentence on what falls flat.","coach_tip":"One specific actionable tip using 'you' language to better reach this demographic."}`;
+
+  await Promise.all(ppSelected.map(async (demo, i) => {
+    try {
+      const d = await fetchWithRetry({
+        model: "claude-sonnet-4-5",
+        max_tokens: 600,
+        system: system(demo),
+        messages: [{ role: "user", content: `Platform: ${currentPlatform}\nPost:\n${post}` }]
+      });
+      const parsed = parseJSON(d.content[0].text);
+      parsed._demo = demo; parsed._idx = i;
+      results[i] = parsed;
+      totR += parsed.reach_score;
+      totE += parsed.engagement_score;
+      totT += parsed.trust_score;
+
+      document.getElementById(`pp-drc-${i}`).outerHTML = buildDRCCard(i, demo, parsed.reach_score, parsed.engagement_score, parsed.trust_score, "Engagement", "Trust signal", parsed);
+    } catch(e) {
+      document.getElementById(`pp-drc-${i}`).outerHTML = `<div class="demo-result-card"><div class="drc-hdr"><div class="drc-name">${demo}</div><span style="font-size:0.72rem;color:var(--red);">Error — try again</span></div></div>`;
+    }
+  }));
+
+  const n = ppSelected.length;
+  document.getElementById("pp-ov-reach").textContent = Math.round(totR/n);
+  document.getElementById("pp-ov-engage").textContent = Math.round(totE/n);
+  document.getElementById("pp-ov-trust").textContent = Math.round(totT/n);
+  const valid = results.filter(Boolean);
+  if (valid.length >= 2) {
+    const best = [...valid].sort((a,b)=>b.engagement_score-a.engagement_score)[0];
+    const worst = [...valid].sort((a,b)=>a.engagement_score-b.engagement_score)[0];
+    if (best._demo !== worst._demo)
+      document.getElementById("pp-ov-sum").textContent = `Strongest response: ${best._demo.split(",")[0]}. Weakest: ${worst._demo.split(",")[0]}.`;
+  }
+
+  postZapier("demographic_post_analysis", { platform: currentPlatform, track: "prospect", demos: ppSelected.join(", ") });
+  setLoading("pp-run-btn", false, "Analyze by demographic");
+}
+
+// ── RECRUIT POST: DEMOGRAPHIC ANALYSIS ──
+async function runRecruitDemoAnalysis() {
+  const post = document.getElementById("rp-post-input").value.trim();
+  if (!post) return alert("Please write or load a post first.");
+  if (rpSelected.length < 3) return alert("Please select at least 3 demographics.");
+
+  setLoading("rp-run-btn", true);
+  const resultsEl = document.getElementById("rp-results");
+  const demoResultsEl = document.getElementById("rp-demo-results");
+  resultsEl.classList.remove("hidden");
+  ["rp-ov-reach","rp-ov-interest","rp-ov-cred"].forEach(id => document.getElementById(id).textContent = "—");
+  document.getElementById("rp-ov-sum").textContent = "";
+
+  demoResultsEl.innerHTML = rpSelected.map((d,i) =>
+    `<div class="demo-result-card" id="rp-drc-${i}">
+      <div class="drc-hdr"><div class="drc-name">${d}</div>
+      <div class="loading-dots" style="color:var(--text3)"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+    </div>`
+  ).join("");
+
+  const results = [];
+  let totR=0, totI=0, totC=0;
+
+  const system = (demo) => `You are simulating how the candidate demographic "${demo}" responds to a recruiting post on ${currentPlatform}. Candidate type: ${recruitType}.
+Respond ONLY with valid JSON, no other text:
+{"reach_score":<1-100>,"interest_score":<1-100>,"credibility_score":<1-100>,"reactions":[{"type":"positive","text":"label"},{"type":"positive","text":"label"},{"type":"neutral","text":"label"},{"type":"negative","text":"label"}],"top_comment":{"name":"Realistic name","text":"Most likely comment from this candidate type — curious, skeptical, or interested"},"why_it_works":"One sentence on what attracts this candidate.","why_it_misses":"One sentence on what feels off or irrelevant.","coach_tip":"One specific actionable tip using 'you' language to better attract this candidate type."}`;
+
+  await Promise.all(rpSelected.map(async (demo, i) => {
+    try {
+      const d = await fetchWithRetry({
+        model: "claude-sonnet-4-5",
+        max_tokens: 600,
+        system: system(demo),
+        messages: [{ role: "user", content: `Platform: ${currentPlatform}\nCandidate type: ${recruitType}\nPost:\n${post}` }]
+      });
+      const parsed = parseJSON(d.content[0].text);
+      parsed._demo = demo; parsed._idx = i;
+      results[i] = parsed;
+      totR += parsed.reach_score;
+      totI += parsed.interest_score;
+      totC += parsed.credibility_score;
+
+      document.getElementById(`rp-drc-${i}`).outerHTML = buildDRCCard(i, demo, parsed.reach_score, parsed.interest_score, parsed.credibility_score, "Interest", "Credibility", parsed, "rp");
+    } catch(e) {
+      document.getElementById(`rp-drc-${i}`).outerHTML = `<div class="demo-result-card"><div class="drc-hdr"><div class="drc-name">${demo}</div><span style="font-size:0.72rem;color:var(--red);">Error — try again</span></div></div>`;
+    }
+  }));
+
+  const n = rpSelected.length;
+  document.getElementById("rp-ov-reach").textContent = Math.round(totR/n);
+  document.getElementById("rp-ov-interest").textContent = Math.round(totI/n);
+  document.getElementById("rp-ov-cred").textContent = Math.round(totC/n);
+  const valid = results.filter(Boolean);
+  if (valid.length >= 2) {
+    const best = [...valid].sort((a,b)=>b.interest_score-a.interest_score)[0];
+    const worst = [...valid].sort((a,b)=>a.interest_score-b.interest_score)[0];
+    if (best._demo !== worst._demo)
+      document.getElementById("rp-ov-sum").textContent = `Most interested: ${best._demo.split(",")[0]}. Least: ${worst._demo.split(",")[0]}.`;
+  }
+
+  postZapier("demographic_post_analysis", { platform: currentPlatform, track: "recruit", demos: rpSelected.join(", ") });
+  setLoading("rp-run-btn", false, "Analyze by demographic");
+}
+
+function buildDRCCard(i, demo, s1, s2, s3, lbl2, lbl3, parsed, prefix="pp") {
+  const initials = parsed.top_comment.name.split(" ").map(w=>w[0]).join("").slice(0,2);
+  return `<div class="demo-result-card" id="${prefix}-drc-${i}">
+    <div class="drc-hdr open" onclick="toggleDRC('${prefix}-drc-${i}')">
+      <div class="drc-name">${demo}</div>
+      <div class="drc-pills">
+        <span class="drc-pill ${scoreClass(s1)}">Reach ${s1}</span>
+        <span class="drc-pill ${scoreClass(s2)}">${lbl2} ${s2}</span>
+        <span class="drc-pill ${scoreClass(s3)}">${lbl3} ${s3}</span>
+        <span class="drc-chev open" id="${prefix}-chev-${i}">▼</span>
+      </div>
+    </div>
+    <div class="drc-body open" id="${prefix}-body-${i}">
+      <div class="reactions" style="margin-bottom:10px;">
+        ${parsed.reactions.map(r=>`<span class="rxn ${r.type}">${r.text}</span>`).join("")}
+      </div>
+      <div class="cmt" style="margin-bottom:10px;">
+        <div class="cmt-av">${initials}</div>
+        <div class="cmt-body"><div class="cmt-name">${parsed.top_comment.name}</div>${parsed.top_comment.text}</div>
+      </div>
+      <div class="drc-grid">
+        <div class="drc-cell"><strong class="pos">✓ Works</strong>${parsed.why_it_works}</div>
+        <div class="drc-cell"><strong class="neg">✗ Misses</strong>${parsed.why_it_misses}</div>
+      </div>
+      <div class="coach"><div class="coach-lbl">Coach tip for this group</div>${parsed.coach_tip}</div>
+    </div>
+  </div>`;
+}
+
+function toggleDRC(cardId) {
+  const card = document.getElementById(cardId);
+  const parts = cardId.split("-");
+  const prefix = parts[0]+"-"+parts[1];
+  const i = parts[parts.length-1];
+  const body = document.getElementById(`${prefix}-body-${i}`);
+  const chev = document.getElementById(`${prefix}-chev-${i}`);
+  if (!body) return;
+  const open = body.classList.contains("open");
+  body.classList.toggle("open", !open);
+  chev && chev.classList.toggle("open", !open);
+  card.querySelector(".drc-hdr").classList.toggle("open", !open);
+}
+
+// ── DM ──
+function sendDM(track) {
+  const prefix = track === "prospect" ? "pdm" : "rdm";
+  const input = document.getElementById(prefix+"-input");
+  const msg = input.value.trim();
+  if (!msg) return;
+  setLoading(prefix+"-send-btn", true, "Send");
+
+  const state = dmState[track];
+  state.history.push({ role:"me", text:msg });
+  input.value = "";
+  renderDMThread(track);
+  state.convo.push({ role:"user", content:msg });
+
+  const rt = track === "recruit" ? recruitTypeDM : "";
+  const system = track === "prospect"
+    ? `You are a realistic prospect on ${currentPlatform} (${getNiche()}) receiving a DM from ${getAgent()}, a financial services agent. You're human and guarded — not a sales prospect who rolls over. Respond naturally as someone who might or might not be interested. After your in-character response, on a new line write "COACH:" followed by exactly one sentence of specific coaching feedback about how ${getAgent()} could improve their approach. Format: [your response]\nCOACH: [one sentence]`
+    : `You are a ${rt} contact on ${currentPlatform} (background: ${getNiche()}) receiving a recruiting DM from ${getAgent()}. You're curious but cautious. You've possibly heard pitches before. Respond naturally. After your response write "COACH:" then one specific coaching sentence about how ${getAgent()} could improve their recruiting message. Format: [your response]\nCOACH: [one sentence]`;
+
+  fetchWithRetry({
+    model: "claude-sonnet-4-5",
+    max_tokens: 400,
+    system,
+    messages: state.convo
+  }).then(d => {
+    const full = d.content[0].text;
+    const parts = full.split("\nCOACH:");
+    const reply = parts[0].trim();
+    const coach = parts[1] ? parts[1].trim() : "";
+    state.convo.push({ role:"assistant", content:reply });
+    state.history.push({ role:"them", text:reply });
+    renderDMThread(track);
+    if (coach) {
+      const coachEl = document.getElementById(prefix+"-coach");
+      coachEl.innerHTML = `<div class="coach"><div class="coach-lbl">Coach note</div>${coach}</div>`;
+      coachEl.classList.remove("hidden");
+    }
+    setLoading(prefix+"-send-btn", false, "Send");
+  }).catch(() => {
+    state.history.push({ role:"them", text:"Connection error — please try again." });
+    renderDMThread(track);
+    setLoading(prefix+"-send-btn", false, "Send");
+  });
+}
+
+function renderDMThread(track) {
+  const prefix = track === "prospect" ? "pdm" : "rdm";
+  const thread = document.getElementById(prefix+"-thread");
+  const history = dmState[track].history;
+  if (!history.length) {
+    thread.innerHTML = '<div class="dm-empty">Start the conversation below</div>';
+    return;
+  }
+  thread.innerHTML = history.map(m =>
+    `<div class="dm-bub ${m.role==="me"?"me":"them"}">${m.role==="them"?'<div class="dm-who">Prospect</div>':''}<div>${m.text}</div></div>`
+  ).join("");
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function resetDM(track) {
+  dmState[track] = { history:[], convo:[] };
+  renderDMThread(track);
+  const prefix = track === "prospect" ? "pdm" : "rdm";
+  const coach = document.getElementById(prefix+"-coach");
+  if (coach) { coach.innerHTML=""; coach.classList.add("hidden"); }
+}
+
+// ── RECRUIT TYPE ──
+function setRecruitType(t) {
+  recruitType = t;
+  ["warm","cold"].forEach(x => document.getElementById("rtype-"+x).classList.toggle("active", x===t));
+}
+
+function setRecruitTypeDM(t) {
+  recruitTypeDM = t;
+  ["warm","cold"].forEach(x => document.getElementById("rdm-rtype-"+x).classList.toggle("active", x===t));
+}
+
+// ── PROSPECT COMMENT ──
+function loadProspectPost() {
+  const p = PROSPECT_POSTS[currentPlatform];
+  document.getElementById("pco-av").textContent = p.initials;
+  document.getElementById("pco-av").style.background = p.color;
+  document.getElementById("pco-name").textContent = p.name;
+  document.getElementById("pco-meta").textContent = p.meta;
+  document.getElementById("pco-post").textContent = p.post;
+  document.getElementById("pco-post-area").classList.remove("hidden");
+  document.getElementById("pco-result").classList.add("hidden");
+  document.getElementById("pco-result").innerHTML = "";
+}
+
+function analyzeComment() {
+  const comment = document.getElementById("pco-input").value.trim();
+  if (!comment) return;
+  setLoading("pco-btn", true, "Simulate reaction");
+  const p = PROSPECT_POSTS[currentPlatform];
+
+  const system = `You are a social media coach. An agent commented on a prospect's ${currentPlatform} post. Evaluate whether the comment is appropriate, natural, non-salesy, and relationship-building. Respond ONLY with JSON:
+{"prospect_reaction":"positive|neutral|negative","prospect_reply":"realistic reply the prospect might leave","visibility_score":<1-100>,"coach_feedback":"2-3 sentences using 'you' language.","would_accept_dm":true|false,"why":"One sentence on why or why not."}`;
+
+  fetchWithRetry({
+    model: "claude-sonnet-4-5",
+    max_tokens: 500,
+    system,
+    messages: [{ role:"user", content:`Prospect's post: ${p.post}\nAgent's comment: ${comment}\nAgent targets: ${getNiche()}` }]
+  }).then(d => {
+    const parsed = parseJSON(d.content[0].text);
+    const dmColor = parsed.would_accept_dm ? "#1a7a45" : "#cc3333";
+    const html = `
+      <div class="card">
+        <div class="comment-list">
+          <div class="cmt">
+            <div class="cmt-av">${getAgent().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</div>
+            <div class="cmt-body"><div class="cmt-name">${getAgent()}</div>${comment}</div>
+          </div>
+          ${parsed.prospect_reply ? `<div class="cmt">
+            <div class="cmt-av" style="background:${p.color};color:white;">${p.initials}</div>
+            <div class="cmt-body"><div class="cmt-name">${p.name}</div>${parsed.prospect_reply}</div>
+          </div>` : ""}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;">
+          <div class="score-card"><div class="score-num">${parsed.visibility_score}</div><div class="score-lbl">Visibility score</div></div>
+          <div class="score-card"><div class="score-num" style="font-size:1rem;color:${dmColor};">${parsed.would_accept_dm?"Would DM":"Won't DM"}</div><div class="score-lbl">DM readiness</div></div>
+        </div>
+        <div class="coach"><div class="coach-lbl">Coach feedback</div>${parsed.coach_feedback}<br><br><strong>DM readiness:</strong> ${parsed.why}</div>
+      </div>`;
+    const result = document.getElementById("pco-result");
+    result.innerHTML = html;
+    result.classList.remove("hidden");
+    setLoading("pco-btn", false, "Simulate reaction");
+  }).catch(() => setLoading("pco-btn", false, "Simulate reaction"));
+}
+
+// ── NEGATIVE COMMENT ──
+function generateNegativeScenario() {
+  fetchWithRetry({
+    model: "claude-sonnet-4-5",
+    max_tokens: 300,
+    system: `Generate a realistic negative comment someone might leave on an insurance/financial agent's ${currentPlatform} post. Skeptical, defensive, or mildly hostile — realistic, not extreme. Respond ONLY with JSON: {"commenter_name":"Full name","comment":"the negative comment"}`,
+    messages: [{ role:"user", content:`Post: ${SAMPLES.prospect[currentPlatform]}\nPlatform: ${currentPlatform}` }]
+  }).then(d => {
+    const parsed = parseJSON(d.content[0].text);
+    negativeData = { comment: parsed.comment, name: parsed.commenter_name };
+    const initials = parsed.commenter_name.split(" ").map(w=>w[0]).join("").slice(0,2);
+    const agentInitials = getAgent().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    document.getElementById("pneg-thread").innerHTML = `
+      <div class="prospect-post-card" style="margin-bottom:12px;">
+        <div class="pp-hdr">
+          <div class="pp-av" style="background:var(--gold);color:#000;">${agentInitials}</div>
+          <div><div class="pp-name">${getAgent()}</div><div class="pp-meta">3 hours ago</div></div>
+        </div>
+        <div class="pp-text">${SAMPLES.prospect[currentPlatform].slice(0,200)}...</div>
+      </div>
+      <div class="comment-list">
+        <div class="cmt neg">
+          <div class="cmt-av">${initials}</div>
+          <div class="cmt-body"><div class="cmt-name">${parsed.commenter_name}</div>${parsed.comment}</div>
+        </div>
+      </div>`;
+    document.getElementById("pneg-scenario").classList.remove("hidden");
+    document.getElementById("pneg-result").classList.add("hidden");
+    document.getElementById("pneg-result").innerHTML = "";
+  }).catch(() => alert("Error generating scenario. Please try again."));
+}
+
+function respondToNegative() {
+  const response = document.getElementById("pneg-input").value.trim();
+  if (!response) return;
+  setLoading("pneg-btn", true, "Post response");
+
+  fetchWithRetry({
+    model: "claude-sonnet-4-5",
+    max_tokens: 500,
+    system: `You are a social media coach. Evaluate an agent's response to a negative comment on ${currentPlatform}. Respond ONLY with JSON:
+{"effectiveness_score":<1-100>,"tone_score":<1-100>,"de_escalation":"good|okay|poor","public_perception":"One sentence on how viewers would see this.","coach_feedback":"2-3 sentences using 'you' language.","suggested_response":"A better version in 1-3 sentences."}`,
+    messages: [{ role:"user", content:`Negative comment: ${negativeData.comment}\nAgent's response: ${response}` }]
+  }).then(d => {
+    const parsed = parseJSON(d.content[0].text);
+    const deColor = parsed.de_escalation==="good"?"#1a7a45":parsed.de_escalation==="poor"?"#cc3333":"var(--amber)";
+    const html = `
+      <div class="score-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="score-card"><div class="score-num">${parsed.effectiveness_score}</div><div class="score-lbl">Effectiveness</div></div>
+        <div class="score-card"><div class="score-num">${parsed.tone_score}</div><div class="score-lbl">Tone</div></div>
+        <div class="score-card"><div class="score-num" style="font-size:0.9rem;color:${deColor};">${parsed.de_escalation.charAt(0).toUpperCase()+parsed.de_escalation.slice(1)}</div><div class="score-lbl">De-escalation</div></div>
+      </div>
+      <div class="coach"><div class="coach-lbl">Coach feedback</div>${parsed.coach_feedback}<br><br><strong>Public perception:</strong> ${parsed.public_perception}<br><br><strong>Suggested response:</strong> ${parsed.suggested_response}</div>`;
+    const result = document.getElementById("pneg-result");
+    result.innerHTML = html;
+    result.classList.remove("hidden");
+    setLoading("pneg-btn", false, "Post response");
+  }).catch(() => setLoading("pneg-btn", false, "Post response"));
+}
+
+// ── RECRUIT COMMENT ──
+function loadRecruitComment() {
+  fetchWithRetry({
+    model: "claude-sonnet-4-5",
+    max_tokens: 300,
+    system: `Generate a realistic comment from someone who saw a recruiting post on ${currentPlatform} and is somewhat interested. Candidate background: ${getNiche()}. Make the comment curious but not over-eager. Respond ONLY with JSON: {"name":"Full name","comment":"their comment","initials":"XX","color":"a hex color for their avatar"}`,
+    messages: [{ role:"user", content:`Platform: ${currentPlatform}\nRecruit type: ${recruitType}` }]
+  }).then(d => {
+    const parsed = parseJSON(d.content[0].text);
+    recruitCommentData = parsed;
+    document.getElementById("rco-av").textContent = parsed.initials;
+    document.getElementById("rco-av").style.background = parsed.color || "#28c97a";
+    document.getElementById("rco-name").textContent = parsed.name;
+    document.getElementById("rco-meta").textContent = "Commented on your post";
+    document.getElementById("rco-comment").textContent = parsed.comment;
+    document.getElementById("rco-post-area").classList.remove("hidden");
+    document.getElementById("rco-result").classList.add("hidden");
+    document.getElementById("rco-result").innerHTML = "";
+  }).catch(() => alert("Error generating scenario. Please try again."));
+}
+
+function analyzeRecruitReply() {
+  const reply = document.getElementById("rco-input").value.trim();
+  if (!reply) return;
+  setLoading("rco-btn", true, "Simulate reaction");
+
+  fetchWithRetry({
+    model: "claude-sonnet-4-5",
+    max_tokens: 500,
+    system: `You are a recruiting coach. Evaluate an agent's reply to an interested comment on ${currentPlatform}. Respond ONLY with JSON:
+{"interest_maintained":true|false,"recruit_reaction":"positive|neutral|negative","recruit_reply":"realistic follow-up from the candidate","next_step_score":<1-100>,"coach_feedback":"2-3 sentences using 'you' language. Focus on moving to a meeting without being pushy.","suggested_reply":"A better version in 1-3 sentences."}`,
+    messages: [{ role:"user", content:`Candidate's comment: ${recruitCommentData.comment}\nAgent's reply: ${reply}\nCandidate background: ${getNiche()}` }]
+  }).then(d => {
+    const parsed = parseJSON(d.content[0].text);
+    const maintColor = parsed.interest_maintained ? "#1a7a45" : "#cc3333";
+    const rcd = recruitCommentData;
+    const html = `
+      <div class="card">
+        <div class="comment-list">
+          <div class="cmt">
+            <div class="cmt-av" style="background:${rcd.color||"#28c97a"};color:white;">${rcd.initials}</div>
+            <div class="cmt-body"><div class="cmt-name">${rcd.name}</div>${rcd.comment}</div>
+          </div>
+          <div class="cmt">
+            <div class="cmt-av" style="background:var(--gold);color:#000;">${getAgent().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</div>
+            <div class="cmt-body"><div class="cmt-name">${getAgent()}</div>${reply}</div>
+          </div>
+          ${parsed.recruit_reply ? `<div class="cmt">
+            <div class="cmt-av" style="background:${rcd.color||"#28c97a"};color:white;">${rcd.initials}</div>
+            <div class="cmt-body"><div class="cmt-name">${rcd.name}</div>${parsed.recruit_reply}</div>
+          </div>` : ""}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;">
+          <div class="score-card"><div class="score-num">${parsed.next_step_score}</div><div class="score-lbl">Next step score</div></div>
+          <div class="score-card"><div class="score-num" style="font-size:0.9rem;color:${maintColor};">${parsed.interest_maintained?"Interest held":"Interest lost"}</div><div class="score-lbl">Momentum</div></div>
+        </div>
+        <div class="coach"><div class="coach-lbl">Coach feedback</div>${parsed.coach_feedback}<br><br><strong>Suggested reply:</strong> ${parsed.suggested_reply}</div>
+      </div>`;
+    const result = document.getElementById("rco-result");
+    result.innerHTML = html;
+    result.classList.remove("hidden");
+    setLoading("rco-btn", false, "Simulate reaction");
+  }).catch(() => setLoading("rco-btn", false, "Simulate reaction"));
+}
+
+// ── ZAPIER ──
+function postZapier(sessionType, extra) {
+  try {
+    fetch(ZAPIER, {
+      method:"POST", mode:"no-cors",
+      body: new URLSearchParams({
+        agent_name: getAgent(),
+        session_type: sessionType,
+        platform: currentPlatform,
+        track: currentTrack,
+        source: "ProspectAI Social Media Trainer",
+        timestamp: new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"}),
+        ...extra
+      })
+    });
+  } catch(e) {}
+}
+
+// ── KEYBOARD ──
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && document.getElementById("pw-screen") && !document.getElementById("pw-screen").classList.contains("hidden")) {
+    checkPW();
+  }
+});
+</script>
+</body>
+</html>
